@@ -8,7 +8,7 @@ class AppTheme {
     primaryColor: AppConstants.primaryColor,
     fontFamily: 'Poppins',
     appBarTheme: const AppBarTheme(
-      color: AppConstants.backgroundColor,
+      backgroundColor: AppConstants.backgroundColor,
       elevation: 0,
     ),
     textTheme: const TextTheme(
