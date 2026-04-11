@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
+import '../models/movie.dart';
 import '../models/seat.dart';
 import '../utils/constants.dart';
 import '../widgets/seat_item.dart';
+import 'payment_screen.dart';
 
 class SeatScreen extends StatefulWidget {
-  final String movieTitle;
+  final Movie movie;
   final int ticketPrice;
+  final String cinema;
+  final String date;
+  final String time;
 
   const SeatScreen({
     super.key,
-    required this.movieTitle,
+    required this.movie,
     this.ticketPrice = AppConstants.defaultTicketPrice,
+    required this.cinema,
+    required this.date,
+    required this.time,
   });
 
   @override
@@ -89,13 +97,20 @@ class _SeatScreenState extends State<SeatScreen> {
   }
 
   void _onBooking() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Booking seat: $_selectedLabels'),
-        backgroundColor: AppConstants.primaryColor,
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => PaymentScreen(
+        movie: widget.movie,
+        cinema: widget.cinema,
+        date: widget.date,
+        time: widget.time,
+        seats: _selectedSeats.map((s) => s.id).toList(),
+        totalPrice: _totalPrice.toDouble(),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Build ──────────────────────────────────────────────────
 
@@ -108,7 +123,7 @@ class _SeatScreenState extends State<SeatScreen> {
         elevation: 0,
         leading: const BackButton(color: Colors.white),
         title: Text(
-          widget.movieTitle,
+          widget.movie.title,
           style: const TextStyle(
             color: AppConstants.textPrimary,
             fontWeight: FontWeight.bold,
