@@ -3,6 +3,7 @@ import '../models/movie.dart';
 import '../widgets/bottom_nav.dart';
 import '../data/movie_data.dart';
 import '../utils/constants.dart';
+import '../screens/seat_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final Movie movie;
@@ -61,9 +62,16 @@ class _DetailScreenState extends State<DetailScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
-      onPressed: () => print(
-        "Booking ${widget.movie.title} on $selectedDate at $selectedTime",
+      onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => SeatScreen(
+        movieTitle: widget.movie.title,
       ),
+    ),
+  );
+},
       child: const Text(
         "Book Now",
         style: TextStyle(
