@@ -14,7 +14,9 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> {
-  String selectedDate = MovieData.dates[0], selectedTime = MovieData.times[2];
+  String selectedCinema = MovieData.cinemas[0];
+  String selectedDate = MovieData.dates[0];
+  String selectedTime = MovieData.times[2];
 
   @override
   Widget build(BuildContext context) {
@@ -63,15 +65,19 @@ class _DetailScreenState extends State<DetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
       onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => SeatScreen(
-        movieTitle: widget.movie.title,
-      ),
-    ),
-  );
-},
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SeatScreen(
+              movie: widget.movie,
+              cinema: selectedCinema,
+              date: selectedDate,
+              time: selectedTime,
+              ticketPrice: widget.movie.price.toInt(),
+            ),
+          ),
+        );
+      },
       child: const Text(
         "Book Now",
         style: TextStyle(
@@ -228,7 +234,7 @@ class _DetailScreenState extends State<DetailScreen> {
       child: DropdownButton<String>(
         isExpanded: true,
         dropdownColor: AppConstants.cardColor,
-        value: MovieData.cinemas[0],
+        value: selectedCinema,
         items: MovieData.cinemas
             .map(
               (e) => DropdownMenuItem(
@@ -237,7 +243,11 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             )
             .toList(),
-        onChanged: (v) {},
+        onChanged: (v) {
+          if (v != null) {
+            setState(() => selectedCinema = v);
+          }
+        },
         icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
       ),
     ),
