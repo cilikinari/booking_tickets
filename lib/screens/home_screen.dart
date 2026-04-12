@@ -16,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCity = "Tangerang";
+  String _selectedCity = "Bali";
   final TextEditingController _citySearchController = TextEditingController();
 
   @override
@@ -157,11 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              AppIcons.search,
-                              color: Colors.grey,
-                              size: 17,
-                            ),
+                            Icon(AppIcons.search, color: Colors.grey, size: 17),
                             const SizedBox(width: 6),
                             Expanded(
                               child: TextField(
