@@ -13,7 +13,7 @@ class AppConstants {
 
   // App UI Constants
   static const double borderRadius = 20.0;
-  static const double padding = 12.0;
+  static const double padding = 40.0;
   static const double maxWidth = 1400.0;
 
   // Movie Metadata Defaults
