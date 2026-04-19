@@ -27,7 +27,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  String _selectedPayment = 'OVO';
+  String _selectedPayment = '';
 
   final List<String> _paymentMethods = [
     'OVO',

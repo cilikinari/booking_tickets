@@ -23,6 +23,16 @@ class SeatItem extends StatelessWidget {
     }
   }
 
+  Color get _seatTextColor {
+    switch (seat.status) {
+      case SeatStatus.available:
+        return Colors.black87;
+      case SeatStatus.booked:
+      case SeatStatus.selected:
+        return Colors.white;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -35,9 +45,16 @@ class SeatItem extends StatelessWidget {
           color: _seatColor,
           borderRadius: BorderRadius.circular(6),
         ),
-        child: seat.status == SeatStatus.selected
-            ? const Icon(Icons.check, color: Colors.white, size: 16)
-            : null,
+        child: Center(
+          child: Text(
+            seat.id,
+            style: TextStyle(
+              color: _seatTextColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
       ),
     );
   }
