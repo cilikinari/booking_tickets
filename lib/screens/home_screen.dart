@@ -5,6 +5,8 @@ import '../data/city_data.dart';
 import '../utils/constants.dart';
 import 'detail_screen.dart';
 import 'search_screen.dart';
+import 'history_screen.dart';
+import 'profile.screen.dart';
 import '../widgets/bottom_nav.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -34,12 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
     letterSpacing: 0.6,
   );
 
-  static const TextStyle _selectedCityTextStyle = TextStyle(
-    color: Colors.white,
-    fontWeight: FontWeight.w700,
-    fontSize: 14,
-  );
-
   @override
   void dispose() {
     _citySearchController.dispose();
@@ -50,7 +46,28 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
-      bottomNavigationBar: CustomBottomNav(currentIndex: 0, onTap: (index) {}),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              // Already on home
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryScreen()),
+              );
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+              break;
+          }
+        },
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
