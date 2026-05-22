@@ -18,11 +18,12 @@ class CustomBottomNav extends StatelessWidget {
       unselectedItemColor: Colors.grey,
       currentIndex: currentIndex,
       onTap: onTap,
+      type: BottomNavigationBarType.fixed,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
         BottomNavigationBarItem(
           icon: Icon(Icons.confirmation_num),
-          label: "Ticket",
+          label: "History",
         ),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
       ],
