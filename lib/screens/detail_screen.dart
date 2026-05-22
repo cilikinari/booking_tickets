@@ -20,8 +20,10 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isWide = MediaQuery.of(context).size.width > 700;
-    final poster = _buildHeroPoster(context), info = _buildMovieInfo();
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWide = screenWidth > 900; // Adjusted for better desktop feel
+    final double horizontalPadding = isWide ? AppConstants.padding : 16.0;
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       bottomNavigationBar: CustomBottomNav(currentIndex: 0, onTap: (index) {}),
@@ -30,22 +32,44 @@ class _DetailScreenState extends State<DetailScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppConstants.padding),
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: 16,
+              ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  isWide
-                      ? Row(
-                          children: [
-                            Expanded(flex: 2, child: poster),
-                            const SizedBox(width: 32),
-                            Expanded(flex: 3, child: info),
-                          ],
-                        )
-                      : Column(
-                          children: [poster, const SizedBox(height: 16), info],
+                  _buildBackButton(),
+                  const SizedBox(height: 16),
+                  if (isWide)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width:
+                              380, // Slightly larger for better balance on desktop
+                          child: _buildPosterSection(),
                         ),
-                  _buildBookingOptions(isWide),
-                  const SizedBox(height: 30),
+                        const SizedBox(width: 48),
+                        Expanded(child: _buildDetailsSection(isWide)),
+                      ],
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: SizedBox(
+                            width:
+                                screenWidth * 0.75, // Impactful but still neat
+                            child: _buildPosterSection(),
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        _buildDetailsSection(isWide),
+                      ],
+                    ),
+                  const SizedBox(height: 32),
                   _buildBookButton(),
                 ],
               ),
@@ -55,6 +79,129 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     );
   }
+
+  Widget _buildBackButton() => IconButton(
+    onPressed: () => Navigator.pop(context),
+    padding: EdgeInsets.zero,
+    constraints: const BoxConstraints(),
+    icon: Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white10),
+      ),
+      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+    ),
+  );
+
+  Widget _buildPosterSection() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      ClipRRect(
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+        child: AspectRatio(
+          aspectRatio: 2 / 3,
+          child: Image.asset(
+            widget.movie.imagePath,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
+      ),
+      const SizedBox(height: 20),
+      Text(
+        widget.movie.title,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 22, // Reduced from 26
+          fontWeight: FontWeight.bold,
+          letterSpacing: -0.2,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        widget.movie.genre,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.5),
+          fontSize: 14, // Reduced from 16
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    ],
+  );
+
+  Widget _buildDetailsSection(bool isWide) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _buildBadgesAndPrice(isWide),
+      const SizedBox(height: 20),
+      _sectionCard(
+        title: "Description",
+        child: Text(
+          widget.movie.description,
+          style: const TextStyle(
+            color: AppConstants.textSecondary,
+            fontSize: 14,
+            height: 1.5,
+          ),
+        ),
+      ),
+      _sectionCard(title: "Choose Cinema", child: _buildCinemaDropdown()),
+      _sectionCard(title: "Date & Time", child: _buildDateTimeSelectors()),
+    ],
+  );
+
+  String _formatIDR(double amount) {
+    String price = amount.toInt().toString();
+    String formatted = "";
+    int count = 0;
+    for (int i = price.length - 1; i >= 0; i--) {
+      formatted = price[i] + formatted;
+      count++;
+      if (count == 3 && i != 0) {
+        formatted = "." + formatted;
+        count = 0;
+      }
+    }
+    return "Rp$formatted";
+  }
+
+  Widget _buildBadgesAndPrice(bool isWide) => SizedBox(
+    width: double.infinity,
+    child: Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _pill(widget.movie.ageRating, Icons.lock),
+            _pill(widget.movie.duration, Icons.access_time),
+            _pill(widget.movie.year, Icons.calendar_today),
+          ],
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppConstants.primaryColor,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            _formatIDR(widget.movie.price),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Widget _buildBookButton() => SizedBox(
     width: double.infinity,
@@ -88,140 +235,6 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     ),
   );
-
-  Widget _buildHeroPoster(BuildContext context) => Stack(
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        child: Image.asset(
-          widget.movie.imagePath,
-          width: double.infinity,
-          height: 400,
-          fit: BoxFit.cover,
-        ),
-      ),
-      Container(
-        height: 400,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [Colors.black.withOpacity(0.9), Colors.transparent],
-          ),
-        ),
-      ),
-      Positioned(
-        top: 10,
-        left: 10,
-        child: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const CircleAvatar(
-            backgroundColor: Colors.black26,
-            child: Icon(Icons.arrow_back, color: Colors.white),
-          ),
-        ),
-      ),
-      Positioned(
-        bottom: 20,
-        left: 20,
-        right: 20,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.movie.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              widget.movie.genre,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildMovieInfo() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 20),
-      Row(
-        children: [
-          Expanded(
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _pill(widget.movie.ageRating, Icons.lock),
-                _pill(widget.movie.duration, Icons.access_time),
-                _pill(widget.movie.year, Icons.calendar_today),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppConstants.primaryColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              "${AppConstants.defaultCurrency}${widget.movie.price}",
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: 24),
-      _sectionCard(
-        title: "Description",
-        child: Text(
-          widget.movie.description,
-          style: const TextStyle(
-            color: AppConstants.textSecondary,
-            fontSize: 16,
-            height: 1.6,
-          ),
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildBookingOptions(bool isWide) {
-    final cinema = _sectionCard(
-      title: "Choose Cinema",
-      child: _buildCinemaDropdown(),
-    );
-    final dateTime = _sectionCard(
-      title: "Date & Time",
-      child: _buildDateTimeSelectors(),
-    );
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: isWide
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(child: cinema),
-                const SizedBox(width: 16),
-                Expanded(child: dateTime),
-              ],
-            )
-          : Column(children: [cinema, const SizedBox(height: 16), dateTime]),
-    );
-  }
 
   Widget _buildCinemaDropdown() => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -320,10 +333,11 @@ class _DetailScreenState extends State<DetailScreen> {
   Widget _sectionCard({required String title, required Widget child}) =>
       Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: AppConstants.cardColor,
-          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
         child: Column(
@@ -333,11 +347,11 @@ class _DetailScreenState extends State<DetailScreen> {
               title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             child,
           ],
         ),
@@ -347,15 +361,22 @@ class _DetailScreenState extends State<DetailScreen> {
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     decoration: BoxDecoration(
       color: AppConstants.inputColor,
-      borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      borderRadius: BorderRadius.circular(10),
       border: Border.all(color: Colors.white10),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(i, color: AppConstants.textSecondary, size: 14),
-        const SizedBox(width: 6),
-        Text(t, style: const TextStyle(color: Colors.white, fontSize: 12)),
+        const SizedBox(width: 8),
+        Text(
+          t,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     ),
   );
