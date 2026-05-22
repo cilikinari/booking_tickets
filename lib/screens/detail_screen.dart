@@ -4,6 +4,9 @@ import '../widgets/bottom_nav.dart';
 import '../data/movie_data.dart';
 import '../utils/constants.dart';
 import '../screens/seat_screen.dart';
+import 'home_screen.dart';
+import 'history_screen.dart';
+import 'profile.screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final Movie movie;
@@ -26,7 +29,32 @@ class _DetailScreenState extends State<DetailScreen> {
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
-      bottomNavigationBar: CustomBottomNav(currentIndex: 0, onTap: (index) {}),
+      bottomNavigationBar: CustomBottomNav(
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const HomeScreen()),
+                (route) => false,
+              );
+              break;
+            case 1:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryScreen()),
+              );
+              break;
+            case 2:
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+              break;
+          }
+        },
+      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
