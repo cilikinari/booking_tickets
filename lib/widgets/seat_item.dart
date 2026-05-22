@@ -5,11 +5,13 @@ import '../utils/constants.dart';
 class SeatItem extends StatelessWidget {
   final Seat seat;
   final VoidCallback onTap;
+  final double size;
 
   const SeatItem({
     super.key,
     required this.seat,
     required this.onTap,
+    this.size = 34,
   });
 
   Color get _seatColor {
@@ -39,8 +41,8 @@ class SeatItem extends StatelessWidget {
       onTap: seat.isSelectable ? onTap : null,
       child: AnimatedContainer(
         duration: AppConstants.fastAnimation,
-        width: 34,
-        height: 34,
+        width: size, 
+        height: size,
         decoration: BoxDecoration(
           color: _seatColor,
           borderRadius: BorderRadius.circular(6),
@@ -50,7 +52,7 @@ class SeatItem extends StatelessWidget {
             seat.id,
             style: TextStyle(
               color: _seatTextColor,
-              fontSize: 11,
+              fontSize: size * 0.32,
               fontWeight: FontWeight.w700,
             ),
           ),

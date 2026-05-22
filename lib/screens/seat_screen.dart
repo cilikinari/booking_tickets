@@ -172,35 +172,51 @@ class _SeatScreenState extends State<SeatScreen> {
   }
 
   Widget _buildSeatGrid() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: List.generate(_rows.length, (rowIdx) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(_rows[rowIdx].length, (colIdx) {
-                final seat = _rows[rowIdx][colIdx];
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      const seatsPerRow = 10;
+      const aisleWidth = 18.0;
+      const horizontalPadding = 32.0; // 16 * 2
+      const seatHorizontalSpacing = 6.0; // 3 * 2 per seat
 
-                if (seat == null) {
-                  return const SizedBox(width: 18);
-                }
+      final availableWidth = constraints.maxWidth
+          - horizontalPadding
+          - aisleWidth;
+      final seatSize = (availableWidth - (seatHorizontalSpacing * seatsPerRow))
+          / seatsPerRow;
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: SeatItem(
-                    seat: seat,
-                    onTap: () => _toggleSeat(rowIdx, colIdx),
-                  ),
-                );
-              }),
-            ),
-          );
-        }),
-      ),
-    );
-  }
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: List.generate(_rows.length, (rowIdx) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_rows[rowIdx].length, (colIdx) {
+                  final seat = _rows[rowIdx][colIdx];
+
+                  if (seat == null) {
+                    return const SizedBox(width: 18);
+                  }
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 3),
+                    child: SeatItem(
+                      seat: seat,
+                      size: seatSize, // ← pass size dynamic
+                      onTap: () => _toggleSeat(rowIdx, colIdx),
+                    ),
+                  );
+                }),
+              ),
+            );
+          }),
+        ),
+      );
+    },
+  );
+}
 
   Widget _buildLegend() {
     return Row(
