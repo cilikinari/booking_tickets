@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../models/seat.dart';
@@ -45,13 +46,12 @@ class _SeatScreenState extends State<SeatScreen> {
   List<List<Seat?>> _generateRows() {
     const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
     const totalCols = 10;
-    const aisleAfter = 4; 
+    const aisleAfter = 4;
 
     return rowLetters.map((row) {
       final cols = <Seat?>[];
       for (int col = 1; col <= totalCols; col++) {
         if (col == aisleAfter + 1) cols.add(null);
-
         final id = '$row$col';
         cols.add(Seat(
           id: id,
@@ -97,20 +97,61 @@ class _SeatScreenState extends State<SeatScreen> {
   }
 
   void _onBooking() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => PaymentScreen(
-        movie: widget.movie,
-        cinema: widget.cinema,
-        date: widget.date,
-        time: widget.time,
-        seats: _selectedSeats.map((s) => s.id).toList(),
-        totalPrice: _totalPrice.toDouble(),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          movie: widget.movie,
+          cinema: widget.cinema,
+          date: widget.date,
+          time: widget.time,
+          seats: _selectedSeats.map((s) => s.id).toList(),
+          totalPrice: _totalPrice.toDouble(),
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  // ── Helpers ────────────────────────────────────────────────
+
+  // Di web/desktop pakai ClampingScrollPhysics, mobile pakai Bouncing
+  ScrollPhysics get _scrollPhysics => kIsWeb
+      ? const ClampingScrollPhysics()
+      : const BouncingScrollPhysics();
+
+  bool get _isDesktopOrWeb =>
+      kIsWeb ||
+      switch (defaultTargetPlatform) {
+        TargetPlatform.windows => true,
+        TargetPlatform.macOS => true,
+        TargetPlatform.linux => true,
+        _ => false,
+      };
+
+  // Seat size dihitung dari lebar layar aktual
+  double _calcSeatSize(BuildContext context) {
+    const seatsPerRow = 10;
+    const aisleWidth = 18.0;
+    const gridPadding = 32.0;       // padding kiri+kanan grid (16*2)
+    const totalSeatSpacing = 60.0;  // 3px kiri + 3px kanan * 10 seats
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final contentWidth = screenWidth.clamp(0.0, AppConstants.maxWidth);
+
+    final usable = contentWidth - gridPadding - aisleWidth - totalSeatSpacing;
+    final size = usable / seatsPerRow;
+
+    return size.clamp(24.0, 52.0);
+  }
+
+  double _calcSeatGridWidth(BuildContext context) {
+    const seatsPerRow = 10;
+    const aisleWidth = 18.0;
+    const totalSeatSpacing = 60.0;
+
+    final seatSize = _calcSeatSize(context);
+    return (seatsPerRow * seatSize) + aisleWidth + totalSeatSpacing;
+  }
 
   // ── Build ──────────────────────────────────────────────────
 
@@ -133,17 +174,39 @@ class _SeatScreenState extends State<SeatScreen> {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 12),
-          _buildScreenCurve(),
-          const SizedBox(height: 28),
-          Expanded(child: _buildSeatGrid()),
-          _buildLegend(),
-          const SizedBox(height: 8),
-          _buildBottomBar(),
-          const SizedBox(height: 20),
-        ],
+      body: Center(
+        child: ConstrainedBox(
+          // Max width supaya tidak melar di desktop/web
+          constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: _scrollPhysics,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 12),
+                      _buildScreenCurve(),
+                      const SizedBox(height: 28),
+                      _buildSeatGrid(),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+              SafeArea(
+                top: false, // AppBar sudah handle bagian atas
+                child: Column(
+                  children: [
+                    _buildLegend(),
+                    const SizedBox(height: 8),
+                    _buildBottomBar(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -158,10 +221,10 @@ class _SeatScreenState extends State<SeatScreen> {
             child: const SizedBox(width: double.infinity, height: 18),
           ),
           const SizedBox(height: 6),
-          Text(
+          const Text(
             'LAYAR BIOSKOP',
             style: TextStyle(
-              color: const Color.fromARGB(255, 255, 255, 255),
+              color: Colors.white,
               fontSize: 10,
               letterSpacing: 2.5,
             ),
@@ -172,57 +235,46 @@ class _SeatScreenState extends State<SeatScreen> {
   }
 
   Widget _buildSeatGrid() {
-  return LayoutBuilder(
-    builder: (context, constraints) {
-      const seatsPerRow = 10;
-      const aisleWidth = 18.0;
-      const horizontalPadding = 32.0; // 16 * 2
-      const seatHorizontalSpacing = 6.0; // 3 * 2 per seat
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final seatSize = _calcSeatSize(context);
 
-      final availableWidth = constraints.maxWidth
-          - horizontalPadding
-          - aisleWidth;
-      final seatSize = (availableWidth - (seatHorizontalSpacing * seatsPerRow))
-          / seatsPerRow;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: List.generate(_rows.length, (rowIdx) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_rows[rowIdx].length, (colIdx) {
+                    final seat = _rows[rowIdx][colIdx];
 
-      return SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: List.generate(_rows.length, (rowIdx) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_rows[rowIdx].length, (colIdx) {
-                  final seat = _rows[rowIdx][colIdx];
+                    if (seat == null) return const SizedBox(width: 18);
 
-                  if (seat == null) {
-                    return const SizedBox(width: 18);
-                  }
-
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 3),
-                    child: SeatItem(
-                      seat: seat,
-                      size: seatSize, // ← pass size dynamic
-                      onTap: () => _toggleSeat(rowIdx, colIdx),
-                    ),
-                  );
-                }),
-              ),
-            );
-          }),
-        ),
-      );
-    },
-  );
-}
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: SeatItem(
+                        seat: seat,
+                        size: seatSize,
+                        onTap: () => _toggleSeat(rowIdx, colIdx),
+                      ),
+                    );
+                  }),
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildLegend() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        _legendDot(const Color.fromARGB(255, 246, 245, 245), 'Available'),
+        _legendDot(const Color(0xFFF5F5F5), 'Available'),
         const SizedBox(width: 24),
         _legendDot(AppConstants.primaryColor, 'Booked'),
         const SizedBox(width: 24),
@@ -240,109 +292,123 @@ class _SeatScreenState extends State<SeatScreen> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(label,
-            style: const TextStyle(
-                color: AppConstants.textSecondary, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: AppConstants.textSecondary, fontSize: 12),
+        ),
       ],
     );
   }
 
   Widget _buildBottomBar() {
+    final barWidth = _calcSeatGridWidth(context);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppConstants.padding),
-      child: Column(
-        children: [
-          // Info total & seat
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: AppConstants.cardColor,
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-            ),
-            child: Row(
-              children: [
-                // Total price
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Total',
-                          style: TextStyle(
-                              color: AppConstants.textMuted, fontSize: 12)),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${AppConstants.defaultCurrency}${_formatNumber(_totalPrice)}',
-                        style: const TextStyle(
-                          color: AppConstants.textPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+      padding: const EdgeInsets.fromLTRB(
+        AppConstants.padding,
+        0,
+        AppConstants.padding,
+        16,
+      ),
+      child: Center(
+        child: SizedBox(
+          width: barWidth,
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppConstants.cardColor,
+                  borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Total',
+                            style: TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${AppConstants.defaultCurrency}${_formatNumber(_totalPrice)}',
+                            style: const TextStyle(
+                              color: AppConstants.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(width: 1, height: 36, color: Colors.white12),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Seat',
+                              style: TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _selectedLabels,
+                              style: const TextStyle(
+                                color: AppConstants.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                // Divider
-                Container(width: 1, height: 36, color: Colors.white12),
-                // Selected seats
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(left: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Seat',
-                            style: TextStyle(
-                                color: AppConstants.textMuted, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text(
-                          _selectedLabels,
-                          style: const TextStyle(
-                            color: AppConstants.textPrimary,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: _isDesktopOrWeb ? 360 : double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConstants.primaryColor,
+                      disabledBackgroundColor:
+                          AppConstants.primaryColor.withOpacity(0.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                      ),
+                    ),
+                    onPressed: _selectedSeats.isEmpty ? null : _onBooking,
+                    child: const Text(
+                      'Booking',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Booking button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                disabledBackgroundColor: AppConstants.primaryColor.withOpacity(0.4),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.borderRadius),
-                ),
               ),
-              onPressed: _selectedSeats.isEmpty ? null : _onBooking,
-              child: const Text(
-                'Booking',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   String _formatNumber(int amount) {
-    return amount.toString().replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
+    return amount
+        .toString()
+        .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
   }
 }
 
@@ -350,7 +416,7 @@ class _ScreenCurvePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color.fromARGB(255, 255, 255, 255).withOpacity(0.5)
+      ..color = Colors.white.withOpacity(0.5)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
