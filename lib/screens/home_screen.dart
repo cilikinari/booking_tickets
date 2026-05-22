@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../data/movie_data.dart';
 import '../data/city_data.dart';
-import '../icons/app_icons.dart';
 import '../utils/constants.dart';
 import 'detail_screen.dart';
 import 'search_screen.dart';
@@ -16,8 +15,30 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCity = "Bali";
+  String _selectedCity = "Choose City";
   final TextEditingController _citySearchController = TextEditingController();
+
+  static const TextStyle _brandTextStyle = TextStyle(
+    color: AppConstants.primaryColor,
+    fontSize: 26,
+    fontWeight: FontWeight.w800,
+    fontStyle: FontStyle.italic,
+    letterSpacing: 0.6,
+  );
+
+  static const TextStyle _brandPlusTextStyle = TextStyle(
+    color: Colors.white,
+    fontSize: 26,
+    fontWeight: FontWeight.w800,
+    fontStyle: FontStyle.italic,
+    letterSpacing: 0.6,
+  );
+
+  static const TextStyle _selectedCityTextStyle = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+    fontSize: 14,
+  );
 
   @override
   void dispose() {
@@ -52,11 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _MovieSection(
-                    title: "Top Movies",
-                    movies: MovieData.topMovies,
-                    isWide: true,
-                  ),
+                  _MovieSection(movies: MovieData.topMovies, isWide: true),
                   const SizedBox(height: 24),
                   const Text(
                     "Now Showing",
@@ -67,11 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _MovieSection(
-                    title: "Now Showing",
-                    movies: MovieData.nowPlaying,
-                    isWide: false,
-                  ),
+                  _MovieSection(movies: MovieData.nowPlaying, isWide: false),
                   const SizedBox(height: 80), // Larger gap from Now Showing
                   _buildFooter(),
                   const SizedBox(height: 20),
@@ -100,7 +113,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: 20),
             Icon(Icons.telegram, color: Colors.grey, size: 20),
             SizedBox(width: 20),
-            Icon(Icons.language, color: Colors.grey, size: 20),
+            Icon(Icons.email, color: Colors.grey, size: 20),
           ],
         ),
       ],
@@ -108,10 +121,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openCityPicker() {
-    showDialog<void>(
+    showGeneralDialog(
       context: context,
       barrierDismissible: true,
-      builder: (context) {
+      barrierLabel: '',
+      pageBuilder: (context, anim1, anim2) {
         return StatefulBuilder(
           builder: (context, setPopupState) {
             final filteredCities = CityData.cities
@@ -122,130 +136,144 @@ class _HomeScreenState extends State<HomeScreen> {
                 )
                 .toList();
 
-            return Dialog(
-              backgroundColor: Colors.transparent,
-              insetPadding: const EdgeInsets.all(12),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Container(
-                  width: 300,
-                  height: 360,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppConstants.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Select your location",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
+            return Stack(
+              children: [
+                Positioned(
+                  top: 80,
+                  right: 16,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      width: 320,
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.7,
                       ),
-                      const SizedBox(height: 10),
-                      Container(
-                        height: 38,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(AppIcons.search, color: Colors.grey, size: 17),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: TextField(
-                                controller: _citySearchController,
-                                onChanged: (_) => setPopupState(() {}),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  hintText: 'Search city',
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey.withOpacity(0.7),
-                                    fontSize: 11,
-                                  ),
-                                ),
+                      decoration: BoxDecoration(
+                        color: AppConstants.cardColor,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.5),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(20, 20, 20, 12),
+                            child: Text(
+                              "Select your location",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                            if (_citySearchController.text.isNotEmpty)
-                              IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: const Icon(
-                                  AppIcons.clear,
-                                  color: Colors.grey,
-                                  size: 17,
-                                ),
-                                onPressed: () {
-                                  _citySearchController.clear();
-                                  setPopupState(() {});
-                                },
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Container(
+                              height: 44,
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: ListView.separated(
-                          padding: EdgeInsets.zero,
-                          itemCount: filteredCities.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(color: Colors.white12, height: 1),
-                          itemBuilder: (context, index) {
-                            final city = filteredCities[index];
-                            final bool selected = city == _selectedCity;
-
-                            return ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              leading: Icon(
-                                AppIcons.location,
-                                size: 17,
-                                color: selected ? Colors.red : Colors.white70,
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.search, color: Colors.grey, size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: _citySearchController,
+                                      onChanged: (_) => setPopupState(() {}),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                      decoration: const InputDecoration(
+                                        hintText: "Search city",
+                                        hintStyle: TextStyle(color: Colors.grey),
+                                        border: InputBorder.none,
+                                        isDense: true,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_citySearchController.text.isNotEmpty)
+                                    IconButton(
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      icon: const Icon(
+                                        Icons.clear,
+                                        color: Colors.grey,
+                                        size: 18,
+                                      ),
+                                      onPressed: () {
+                                        _citySearchController.clear();
+                                        setPopupState(() {});
+                                      },
+                                    ),
+                                ],
                               ),
-                              title: Text(
-                                city.toUpperCase(),
-                                style: TextStyle(
-                                  color: selected ? Colors.red : Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: selected
-                                      ? FontWeight.bold
-                                      : FontWeight.w600,
-                                ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Flexible(
+                            child: ListView.separated(
+                              shrinkWrap: true,
+                              padding: const EdgeInsets.only(bottom: 12),
+                              itemCount: filteredCities.length,
+                              separatorBuilder: (context, index) => Divider(
+                                color: Colors.white.withOpacity(0.05),
+                                height: 1,
+                                indent: 20,
+                                endIndent: 20,
                               ),
-                              trailing: selected
-                                  ? const Icon(
-                                      AppIcons.check,
-                                      color: Colors.red,
-                                      size: 17,
-                                    )
-                                  : null,
-                              onTap: () {
-                                setState(() {
-                                  _selectedCity = city;
-                                });
-                                _citySearchController.clear();
-                                Navigator.pop(context);
+                              itemBuilder: (context, index) {
+                                final city = filteredCities[index];
+                                final selected = city == _selectedCity;
+                                return ListTile(
+                                  leading: Icon(
+                                    Icons.location_on,
+                                    color: selected
+                                        ? AppConstants.primaryColor
+                                        : Colors.grey,
+                                    size: 18,
+                                  ),
+                                  title: Text(
+                                    city.toUpperCase(),
+                                    style: TextStyle(
+                                      color: selected
+                                          ? AppConstants.primaryColor
+                                          : Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(horizontal: 20),
+                                  dense: true,
+                                  onTap: () {
+                                    setState(() => _selectedCity = city);
+                                    _citySearchController.clear();
+                                    Navigator.pop(context);
+                                  },
+                                );
                               },
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             );
           },
         );
@@ -257,37 +285,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        InkWell(
+        const _BrandLogo(),
+        _CitySelectorButton(
+          selectedCity: _selectedCity,
           onTap: _openCityPicker,
-          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppConstants.primaryColor),
-              borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  _selectedCity,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.keyboard_arrow_down,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const CircleAvatar(
-          backgroundColor: Colors.grey,
-          child: Icon(Icons.person, color: Colors.black),
         ),
       ],
     );
@@ -321,15 +322,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _MovieSection extends StatelessWidget {
-  final String title;
   final List<Movie> movies;
   final bool isWide;
 
-  const _MovieSection({
-    required this.title,
-    required this.movies,
-    required this.isWide,
-  });
+  const _MovieSection({required this.movies, required this.isWide});
 
   @override
   Widget build(BuildContext context) {
@@ -342,6 +338,66 @@ class _MovieSection extends StatelessWidget {
             child: _MovieCard(movie: movie, isWide: isWide),
           );
         }).toList(),
+      ),
+    );
+  }
+}
+
+class _BrandLogo extends StatelessWidget {
+  const _BrandLogo();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text('CINEMA', style: _HomeScreenState._brandTextStyle),
+        Text('+', style: _HomeScreenState._brandPlusTextStyle),
+      ],
+    );
+  }
+}
+
+class _CitySelectorButton extends StatelessWidget {
+  final String selectedCity;
+  final VoidCallback onTap;
+
+  const _CitySelectorButton({required this.selectedCity, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(21),
+      child: Container(
+        height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF222222),
+          borderRadius: BorderRadius.circular(19),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_on_rounded,
+              color: Colors.white,
+              size: 16,
+            ),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                selectedCity.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
