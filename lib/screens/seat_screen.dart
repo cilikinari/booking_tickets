@@ -381,7 +381,7 @@ class _SeatScreenState extends State<SeatScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppConstants.primaryColor,
                       disabledBackgroundColor:
-                          AppConstants.primaryColor.withOpacity(0.4),
+                          AppConstants.primaryColor.withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
                       ),
@@ -416,7 +416,7 @@ class _ScreenCurvePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.5)
+      ..color = Colors.white.withValues(alpha: 0.5)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
