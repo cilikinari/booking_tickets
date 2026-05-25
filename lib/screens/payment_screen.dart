@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../models/booking.dart';
 import '../utils/constants.dart';
+import 'home_screen.dart';
 import 'success_screen.dart';
+import '../widgets/timeout_dialog.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Movie movie;
@@ -29,14 +31,13 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  static const _countdownSeconds = 10 * 60;
+  static const _countdownSeconds = 10 * 10;
   static const _paymentMethods = ['OVO', 'Dana', 'Gopay', 'LinkAja', 'Shopeepay'];
 
   String _selectedPayment = '';
   int _remainingSeconds = _countdownSeconds;
   Timer? _timer;
-
-  // ── LIFECYCLE ──────────────────────────────────────────────
+  bool _isTimeoutDialogVisible = false;
 
   @override
   void initState() {
@@ -50,17 +51,57 @@ class _PaymentScreenState extends State<PaymentScreen> {
     super.dispose();
   }
 
-  // ── LOGIC ──────────────────────────────────────────────────
-
   void _startTimer() {
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (_remainingSeconds <= 0) {
-        _timer?.cancel();
-        if (mounted) Navigator.pop(context);
+      if (!mounted) {
         return;
       }
+
+      if (_remainingSeconds <= 1) {
+        setState(() => _remainingSeconds = 0);
+        _timer?.cancel();
+        _showTimeoutDialog();
+        return;
+      }
+
       setState(() => _remainingSeconds--);
     });
+  }
+
+  Future<void> _showTimeoutDialog() async {
+    if (_isTimeoutDialogVisible || !mounted) {
+      return;
+    }
+
+    _isTimeoutDialogVisible = true;
+
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          return TimeoutDialog(
+            onGotIt: () {
+              Navigator.of(dialogContext).pop();
+              _goHome();
+            },
+          );
+        },
+      );
+    } finally {
+      _isTimeoutDialogVisible = false;
+    }
+  }
+
+  void _goHome() {
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+      (route) => false,
+    );
   }
 
   void _onPayNow() {
@@ -83,8 +124,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // ── GETTERS ────────────────────────────────────────────────
-
   bool get _canPay => _selectedPayment.isNotEmpty;
 
   String get _formattedSeats => widget.seats.join(', ');
@@ -95,13 +134,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return '$m:$s';
   }
 
-  String get _formattedPrice =>
-      'Rp${widget.totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.')}';
+  String get _formattedPrice => 'Rp${widget.totalPrice.toInt().toString().replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{3})+$)'),
+        (m) => '${m[1]}.',
+      )}';
 
   ScrollPhysics get _scrollPhysics =>
       kIsWeb ? const ClampingScrollPhysics() : const BouncingScrollPhysics();
 
-  // ── BUILD ──────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -149,8 +189,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // ── LAYOUTS ────────────────────────────────────────────────
-
   Widget _buildDesktopLayout() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,7 +204,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
               SizedBox(
                 width: 460,
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 42), // align with card below "Payment Methods" title + spacing
+                  // align with card below "Payment Methods" title + spacing
+                  padding: const EdgeInsets.only(top: 42),
                   child: _buildOrderSummaryCard(posterHeight: 320, posterWidth: 200),
                 ),
               ),
@@ -190,7 +229,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  // ── WIDGETS ────────────────────────────────────────────────
 
   Widget _buildCountdownBanner() {
     return Container(
@@ -206,7 +244,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Text(
               'Yuk, selesaikan pembayaranmu dalam',
               style: const TextStyle(
-                color: Color(0xFF9B2630),
+                color: AppConstants.primaryColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
               ),
@@ -218,7 +256,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Text(
               _formattedCountdown,
               style: const TextStyle(
-                color: Color(0xFF9B2630),
+                color: AppConstants.primaryColor,
                 fontSize: 15,
                 fontWeight: FontWeight.bold,
               ),
@@ -368,15 +406,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final isSelected = _selectedPayment == method;
     return ListTile(
       onTap: () => setState(() => _selectedPayment = method),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      tileColor: isSelected ? Colors.white10 : Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       title: Text(
         method,
-        style: const TextStyle(
+        style: TextStyle(
           color: AppConstants.textPrimary,
           fontSize: 15,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
         ),
       ),
-      trailing: _RadioIndicator(isSelected: isSelected),
+      trailing: SizedBox(
+        width: 34,
+        height: 34,
+        child: Center(
+          child: Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: isSelected ? Colors.cyan : Colors.white70,
+                width: 2.5,
+              ),
+              color: isSelected ? Colors.cyan : Colors.white,
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -389,8 +449,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppConstants.primaryColor,
-            disabledBackgroundColor:
-                AppConstants.primaryColor.withValues(alpha: 0.45),
+            disabledBackgroundColor: AppConstants.primaryColor.withValues(alpha: 0.45),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(32),
             ),
@@ -410,37 +469,3 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 }
 
-// ── EXTRACTED WIDGET ───────────────────────────────────────────────────────────
-
-/// Radio-style selection indicator: white ring with a filled blue dot when selected.
-class _RadioIndicator extends StatelessWidget {
-  final bool isSelected;
-
-  const _RadioIndicator({required this.isSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 26,
-      height: 26,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2.5),
-        ),
-        child: isSelected
-            ? Center(
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.blue,
-                  ),
-                ),
-              )
-            : null,
-      ),
-    );
-  }
-}
