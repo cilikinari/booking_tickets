@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
+import '../widgets/app_logo.dart'; // <-- Import AppLogo
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -22,7 +23,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Main content yang bisa di-scroll dan otomatis ke tengah
             Expanded(
               child: Center(
                 child: SingleChildScrollView(
@@ -58,8 +58,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-
-            // Footer yang menempel rapi di bawah
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 40),
@@ -102,30 +100,9 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'CINEMA',
-              style: TextStyle(
-                color: AppConstants.primaryColor,
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                fontStyle: FontStyle.italic,
-                letterSpacing: 1,
-              ),
-            ),
-            const Text(
-              '+',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 48,
-                fontWeight: FontWeight.w900,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
+        // Memberikan ukuran 48 agar logonya besar khusus di halaman ini
+        const AppLogo(fontSize: 48),
+
         const SizedBox(height: 32),
         const Text(
           'WELCOME BACK!',
@@ -223,7 +200,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
-
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity,
