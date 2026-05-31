@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
-import '../widgets/bottom_nav.dart';
+
 import '../data/movie_data.dart';
 import '../utils/constants.dart';
 import '../screens/seat_screen.dart';
@@ -29,32 +29,6 @@ class _DetailScreenState extends State<DetailScreen> {
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 0,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const HomeScreen()),
-                (route) => false,
-              );
-              break;
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HistoryScreen()),
-              );
-              break;
-            case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-              break;
-          }
-        },
-      ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -108,18 +82,18 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _buildBackButton() => IconButton(
-    onPressed: () => Navigator.pop(context),
-    padding: EdgeInsets.zero,
-    constraints: const BoxConstraints(),
-    icon: Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white10),
-      ),
-      child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+  Widget _buildBackButton() => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: const Color(0xFF1E1E1E),
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white10),
+    ),
+    child: IconButton(
+      padding: EdgeInsets.zero,
+      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+      onPressed: () => Navigator.pop(context),
     ),
   );
 
