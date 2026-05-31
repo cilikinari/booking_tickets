@@ -9,6 +9,7 @@ import '../widgets/bottom_nav.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/city_picker.dart';
+import '../widgets/app_footer.dart'; // <-- Tambahkan import ini
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -59,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSearchBar(context),
                   const SizedBox(height: 24),
 
-                  // Section Top Movies (Judul dikirim lewat parameter widget)
+                  // Section Top Movies
                   MovieSection(
                     title: "Top Movies",
                     movies: MovieData.topMovies,
@@ -69,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: 24),
 
-                  // Section Now Showing (Judul dikirim lewat parameter widget)
+                  // Section Now Showing
                   MovieSection(
                     title: "Now Showing",
                     movies: MovieData.nowPlaying,
@@ -78,7 +79,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 80),
-                  _buildFooter(),
+                  
+                  // Panggil widget AppFooter di sini
+                  const AppFooter(), 
+                  
                   const SizedBox(height: 20),
                 ],
               ),
@@ -93,29 +97,6 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => DetailScreen(movie: movie)),
-    );
-  }
-
-  Widget _buildFooter() {
-    return const Column(
-      children: [
-        Text(
-          "Enjoy the best movie experience with our seamless ticket booking system. Explore the latest releases and secure your seats in just a few clicks.",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey, fontSize: 12, height: 1.5),
-        ),
-        SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.discord, color: Colors.grey, size: 20),
-            SizedBox(width: 20),
-            Icon(Icons.telegram, color: Colors.grey, size: 20),
-            SizedBox(width: 20),
-            Icon(Icons.email, color: Colors.grey, size: 20),
-          ],
-        ),
-      ],
     );
   }
 
