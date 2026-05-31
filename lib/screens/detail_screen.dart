@@ -4,9 +4,7 @@ import '../models/movie.dart';
 import '../data/movie_data.dart';
 import '../utils/constants.dart';
 import '../screens/seat_screen.dart';
-import 'home_screen.dart';
-import 'history_screen.dart';
-import 'profile.screen.dart';
+
 
 class DetailScreen extends StatefulWidget {
   final Movie movie;

@@ -5,7 +5,7 @@ import '../widgets/bottom_nav.dart';
 import '../utils/constants.dart';
 import '../data/movie_data.dart';
 import 'home_screen.dart';
-import 'profile.screen.dart';
+import 'profile_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
