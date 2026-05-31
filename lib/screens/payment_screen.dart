@@ -32,7 +32,13 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   static const _countdownSeconds = 10 * 10;
-  static const _paymentMethods = ['OVO', 'Dana', 'Gopay', 'LinkAja', 'Shopeepay'];
+  static const _paymentMethods = [
+    'OVO',
+    'Dana',
+    'Gopay',
+    'LinkAja',
+    'Shopeepay',
+  ];
 
   String _selectedPayment = '';
   int _remainingSeconds = _countdownSeconds;
@@ -134,14 +140,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return '$m:$s';
   }
 
-  String get _formattedPrice => 'Rp${widget.totalPrice.toInt().toString().replaceAllMapped(
-        RegExp(r'(\d)(?=(\d{3})+$)'),
-        (m) => '${m[1]}.',
-      )}';
+  String get _formattedPrice =>
+      'Rp${widget.totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.')}';
 
   ScrollPhysics get _scrollPhysics =>
       kIsWeb ? const ClampingScrollPhysics() : const BouncingScrollPhysics();
-
 
   @override
   Widget build(BuildContext context) {
@@ -154,15 +157,35 @@ class _PaymentScreenState extends State<PaymentScreen> {
       appBar: AppBar(
         backgroundColor: AppConstants.backgroundColor,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
+        leading: Align(
+          alignment: Alignment.center,
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              margin: const EdgeInsets.only(left: 16),
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFF2C2C2C),
+              ),
+              child: const Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ),
+        ),
         title: const Text(
           'Payment Details',
           style: TextStyle(
             color: AppConstants.textPrimary,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 20,
           ),
         ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: Center(
@@ -204,9 +227,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
               SizedBox(
                 width: 460,
                 child: Padding(
-                  // align with card below "Payment Methods" title + spacing
                   padding: const EdgeInsets.only(top: 42),
-                  child: _buildOrderSummaryCard(posterHeight: 320, posterWidth: 200),
+                  child: _buildOrderSummaryCard(
+                    posterHeight: 320,
+                    posterWidth: 200,
+                  ),
                 ),
               ),
             ],
@@ -229,7 +254,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-
   Widget _buildCountdownBanner() {
     return Container(
       width: double.infinity,
@@ -240,10 +264,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
       child: Row(
         children: [
-          Expanded(
+          const Expanded(
             child: Text(
               'Yuk, selesaikan pembayaranmu dalam',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppConstants.primaryColor,
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
@@ -328,10 +352,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         children: [
           Text(
             '$label ',
-            style: const TextStyle(
-              color: AppConstants.textMuted,
-              fontSize: 12,
-            ),
+            style: const TextStyle(color: AppConstants.textMuted, fontSize: 12),
           ),
           Flexible(
             child: Text(
@@ -386,7 +407,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.35),
+                color: Colors.black.withOpacity(0.35),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -408,9 +429,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       onTap: () => setState(() => _selectedPayment = method),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       tileColor: isSelected ? Colors.white10 : Colors.transparent,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       title: Text(
         method,
         style: TextStyle(
@@ -449,7 +468,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppConstants.primaryColor,
-            disabledBackgroundColor: AppConstants.primaryColor.withValues(alpha: 0.45),
+            disabledBackgroundColor: AppConstants.primaryColor.withOpacity(
+              0.45,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(32),
             ),
@@ -468,4 +489,3 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 }
-
