@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
-import '../widgets/app_logo.dart'; // <-- Import AppLogo
+import '../widgets/app_logo.dart';
+import '../widgets/app_footer.dart'; // <-- Import AppFooter
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -64,30 +65,8 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.white10)),
               ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Enjoy the best movie experience with our seamless ticket booking system.\nExplore the latest releases and secure your seats in just a few clicks.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.games, color: Colors.white54, size: 20),
-                      SizedBox(width: 24),
-                      Icon(Icons.telegram, color: Colors.white54, size: 20),
-                      SizedBox(width: 24),
-                      Icon(Icons.email, color: Colors.white54, size: 20),
-                    ],
-                  ),
-                ],
-              ),
+              // Panggil widget AppFooter di sini
+              child: const AppFooter(),
             ),
           ],
         ),
@@ -100,9 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Memberikan ukuran 48 agar logonya besar khusus di halaman ini
         const AppLogo(fontSize: 48),
-
         const SizedBox(height: 32),
         const Text(
           'WELCOME BACK!',
