@@ -168,7 +168,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       decoration: BoxDecoration(
                         color: AppConstants.cardColor,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.white.withOpacity(0.05)),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.05),
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withOpacity(0.5),
@@ -196,14 +198,20 @@ class _HomeScreenState extends State<HomeScreen> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Container(
                               height: 44,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.search, color: Colors.grey, size: 20),
+                                  const Icon(
+                                    Icons.search,
+                                    color: Colors.grey,
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: TextField(
@@ -215,7 +223,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ),
                                       decoration: const InputDecoration(
                                         hintText: "Search city",
-                                        hintStyle: TextStyle(color: Colors.grey),
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey,
+                                        ),
                                         border: InputBorder.none,
                                         isDense: true,
                                       ),
@@ -273,8 +283,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                       letterSpacing: 0.5,
                                     ),
                                   ),
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(horizontal: 20),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                  ),
                                   dense: true,
                                   onTap: () {
                                     setState(() => _selectedCity = city);
