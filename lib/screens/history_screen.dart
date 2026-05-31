@@ -94,38 +94,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 horizontal: horizontalPadding,
                 vertical: 20,
               ),
-              child: Row(
+              child: Stack(
+                alignment: Alignment.center,
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    icon: Container(
-                      padding: const EdgeInsets.all(8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
+                        color: const Color(0xFF1E1E1E),
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white10),
                       ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                        size: 20,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
                       ),
                     ),
                   ),
-                  const Expanded(
-                    child: Text(
-                      'History',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const Text(
+                    'History',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 40),
                 ],
               ),
             ),
