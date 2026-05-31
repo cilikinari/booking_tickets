@@ -30,11 +30,26 @@ class _SeatScreenState extends State<SeatScreen> {
   late List<List<Seat?>> _rows;
 
   static const _bookedIds = {
-    'A1','A2','A5','A6','A7',
-    'B2','B3','B8','B9','B10',
-    'C4','C5','C9',
-    'D1','D4','D5','D9','D10',
-    'E3','E6',
+    'A1',
+    'A2',
+    'A5',
+    'A6',
+    'A7',
+    'B2',
+    'B3',
+    'B8',
+    'B9',
+    'B10',
+    'C4',
+    'C5',
+    'C9',
+    'D1',
+    'D4',
+    'D5',
+    'D9',
+    'D10',
+    'E3',
+    'E6',
   };
 
   @override
@@ -53,14 +68,16 @@ class _SeatScreenState extends State<SeatScreen> {
       for (int col = 1; col <= totalCols; col++) {
         if (col == aisleAfter + 1) cols.add(null);
         final id = '$row$col';
-        cols.add(Seat(
-          id: id,
-          row: row,
-          number: col,
-          status: _bookedIds.contains(id)
-              ? SeatStatus.booked
-              : SeatStatus.available,
-        ));
+        cols.add(
+          Seat(
+            id: id,
+            row: row,
+            number: col,
+            status: _bookedIds.contains(id)
+                ? SeatStatus.booked
+                : SeatStatus.available,
+          ),
+        );
       }
       return cols;
     }).toList();
@@ -115,9 +132,8 @@ class _SeatScreenState extends State<SeatScreen> {
   // ── Helpers ────────────────────────────────────────────────
 
   // Di web/desktop pakai ClampingScrollPhysics, mobile pakai Bouncing
-  ScrollPhysics get _scrollPhysics => kIsWeb
-      ? const ClampingScrollPhysics()
-      : const BouncingScrollPhysics();
+  ScrollPhysics get _scrollPhysics =>
+      kIsWeb ? const ClampingScrollPhysics() : const BouncingScrollPhysics();
 
   bool get _isDesktopOrWeb =>
       kIsWeb ||
@@ -132,8 +148,8 @@ class _SeatScreenState extends State<SeatScreen> {
   double _calcSeatSize(BuildContext context) {
     const seatsPerRow = 10;
     const aisleWidth = 18.0;
-    const gridPadding = 32.0;       // padding kiri+kanan grid (16*2)
-    const totalSeatSpacing = 60.0;  // 3px kiri + 3px kanan * 10 seats
+    const gridPadding = 32.0; // padding kiri+kanan grid (16*2)
+    const totalSeatSpacing = 60.0; // 3px kiri + 3px kanan * 10 seats
 
     final screenWidth = MediaQuery.of(context).size.width;
     final contentWidth = screenWidth.clamp(0.0, AppConstants.maxWidth);
@@ -160,16 +176,39 @@ class _SeatScreenState extends State<SeatScreen> {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
-        backgroundColor: AppConstants.backgroundColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: const BackButton(color: Colors.white),
+        toolbarHeight: 80,
+        leadingWidth: 70,
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0),
+          child: Center(
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E1E),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white10),
+              ),
+              child: IconButton(
+                padding: EdgeInsets.zero,
+                icon: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+        ),
         title: Text(
           widget.movie.title,
           style: const TextStyle(
             color: AppConstants.textPrimary,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
-            letterSpacing: 2,
+            fontSize: 20,
           ),
         ),
         centerTitle: true,
@@ -294,7 +333,10 @@ class _SeatScreenState extends State<SeatScreen> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(color: AppConstants.textSecondary, fontSize: 12),
+          style: const TextStyle(
+            color: AppConstants.textSecondary,
+            fontSize: 12,
+          ),
         ),
       ],
     );
@@ -316,10 +358,15 @@ class _SeatScreenState extends State<SeatScreen> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 decoration: BoxDecoration(
                   color: AppConstants.cardColor,
-                  borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadius,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -329,7 +376,10 @@ class _SeatScreenState extends State<SeatScreen> {
                         children: [
                           const Text(
                             'Total',
-                            style: TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                            style: TextStyle(
+                              color: AppConstants.textMuted,
+                              fontSize: 12,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -352,7 +402,10 @@ class _SeatScreenState extends State<SeatScreen> {
                           children: [
                             const Text(
                               'Seat',
-                              style: TextStyle(color: AppConstants.textMuted, fontSize: 12),
+                              style: TextStyle(
+                                color: AppConstants.textMuted,
+                                fontSize: 12,
+                              ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -380,10 +433,12 @@ class _SeatScreenState extends State<SeatScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppConstants.primaryColor,
-                      disabledBackgroundColor:
-                          AppConstants.primaryColor.withValues(alpha: 0.4),
+                      disabledBackgroundColor: AppConstants.primaryColor
+                          .withValues(alpha: 0.4),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.borderRadius,
+                        ),
                       ),
                     ),
                     onPressed: _selectedSeats.isEmpty ? null : _onBooking,
@@ -406,9 +461,10 @@ class _SeatScreenState extends State<SeatScreen> {
   }
 
   String _formatNumber(int amount) {
-    return amount
-        .toString()
-        .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+$)'),
+      (m) => '${m[1]}.',
+    );
   }
 }
 
