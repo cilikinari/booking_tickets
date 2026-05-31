@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
-
 import '../data/movie_data.dart';
 import '../utils/constants.dart';
 import '../screens/seat_screen.dart';
-
 
 class DetailScreen extends StatefulWidget {
   final Movie movie;
@@ -39,7 +37,9 @@ class _DetailScreenState extends State<DetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildBackButton(),
+                  const BackButton(
+                    color: Colors.white,
+                  ), // Menggunakan bawaan Flutter dengan warna putih
                   const SizedBox(height: 16),
                   if (isWide)
                     Row(
@@ -79,21 +79,6 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     );
   }
-
-  Widget _buildBackButton() => Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(
-      color: const Color(0xFF1E1E1E),
-      shape: BoxShape.circle,
-      border: Border.all(color: Colors.white10),
-    ),
-    child: IconButton(
-      padding: EdgeInsets.zero,
-      icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-      onPressed: () => Navigator.pop(context),
-    ),
-  );
 
   Widget _buildPosterSection() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
