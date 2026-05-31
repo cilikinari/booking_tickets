@@ -97,26 +97,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
+                  // Mengganti Container bulatan lama dengan BackButton bawaan Flutter
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E1E),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white10),
-                      ),
-                      child: IconButton(
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ),
+                    child: const BackButton(color: Colors.white),
                   ),
                   const Text(
                     'History',
