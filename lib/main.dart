@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+// ignore: unused_import
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'screens/home_screen.dart';
+import 'screens/home_unauth_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       scrollBehavior: _AppScrollBehavior(),
-      home: const HomeScreen(),
+      home: const HomeUnauthScreen(),
     );
   }
 }
