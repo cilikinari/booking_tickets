@@ -3,14 +3,10 @@ import '../utils/constants.dart';
 import '../widgets/bottom_nav.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
-
-// Import file dialog yang baru dibuat (sesuaikan path-nya ya)
 import '../widgets/logout_dialog.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
-
-  // Fungsi _showLogoutDialog SUDAH DIHAPUS dari sini 🎉
 
   @override
   Widget build(BuildContext context) {
@@ -20,30 +16,8 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         toolbarHeight: 80,
-        leadingWidth: 70,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: Center(
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white10),
-              ),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ),
+        // Menggunakan BackButton bawaan Flutter langsung di leading AppBar
+        leading: const BackButton(color: Colors.white),
         title: const Text(
           'My Account',
           style: TextStyle(
@@ -164,7 +138,6 @@ class ProfileScreen extends StatelessWidget {
       children: [
         GestureDetector(
           onTap: () {
-            // Memanggil pop-up dengan widget yang sudah dipisah
             showDialog(
               context: context,
               builder: (context) => const LogoutDialog(),
