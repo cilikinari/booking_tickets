@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/booking.dart';
 import '../utils/constants.dart';
+import 'invoice_screen.dart';
 
 const double _successScreenMaxWidth = 420;
 
@@ -69,16 +70,21 @@ class SuccessScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppConstants.primaryColor,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(AppConstants.borderRadius),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.borderRadius,
+                          ),
                         ),
                       ),
                       onPressed: () {
-                        Navigator.of(context)
-                            .popUntil((route) => route.isFirst);
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                InvoiceScreen(booking: booking),
+                          ),
+                        );
                       },
                       child: const Text(
-                        'Back To Home',
+                        'See Invoice',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
@@ -93,6 +99,5 @@ class SuccessScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    );  }
 }
