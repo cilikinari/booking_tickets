@@ -5,6 +5,7 @@ import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart'; // <-- Import AppFooter
 import 'login_screen.dart';
+import 'register.dart';
 
 class HomeUnauthScreen extends StatelessWidget {
   const HomeUnauthScreen({super.key});
@@ -65,14 +66,8 @@ class HomeUnauthScreen extends StatelessWidget {
         const AppLogo(),
         Row(
           children: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 0,
-              ),
+            // Tombol Sign In (Gaya Outlined Text)
+            TextButton(
               onPressed: () {
                 Navigator.push(
                   context,
@@ -81,6 +76,35 @@ class HomeUnauthScreen extends StatelessWidget {
               },
               child: const Text(
                 'Sign In',
+                style: TextStyle(
+                  color: AppConstants.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Tombol Sign Up (Gaya Utama)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppConstants.primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                );
+              },
+              child: const Text(
+                'Sign Up',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
