@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../utils/constants.dart';
+import '../utils/helpers.dart';
 
 class OrderSummaryCard extends StatelessWidget {
   final Movie movie;
@@ -25,9 +26,6 @@ class OrderSummaryCard extends StatelessWidget {
   });
 
   String get _formattedSeats => seats.join(', ');
-
-  String get _formattedPrice =>
-      'Rp${totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.')}';
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +111,7 @@ class OrderSummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        _formattedPrice,
+        'Rp ${AppHelpers.formatNumber(totalPrice)}', // Menggunakan format global
         style: const TextStyle(
           color: AppConstants.textPrimary,
           fontWeight: FontWeight.bold,

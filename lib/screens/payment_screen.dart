@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../models/booking.dart';
 import '../utils/constants.dart';
+import '../utils/helpers.dart'; // Import helper global
 import '../widgets/countdown_banner.dart';
 import '../widgets/order_summary.dart';
 import '../widgets/payment_method.dart';
@@ -127,10 +128,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return '$m:$s';
   }
 
-  // Mengembalikan String murni untuk format rupiah agar tidak bentrok dengan return tipe Widget
-  String get _formattedPrice =>
-      'Rp${widget.totalPrice.toInt().toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.')}';
-
   ScrollPhysics get _scrollPhysics =>
       kIsWeb ? const ClampingScrollPhysics() : const BouncingScrollPhysics();
 
@@ -145,7 +142,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       appBar: AppBar(
         backgroundColor: AppConstants.backgroundColor,
         elevation: 0,
-        // Menggunakan BackButton bawaan Flutter agar style lingkaran overlay-nya pas dengan screen lainnya
         leading: const BackButton(color: Colors.white),
         title: const Text(
           'Payment Details',
@@ -267,7 +263,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
           onPressed: _canPay ? _onPayNow : null,
           child: Text(
-            _canPay ? 'Pay Now · $_formattedPrice' : 'Select Payment Method',
+            _canPay 
+                ? 'Pay Now · ${AppConstants.defaultCurrency}${AppHelpers.formatNumber(widget.totalPrice)}' 
+                : 'Select Payment Method',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,

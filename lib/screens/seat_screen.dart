@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/movie.dart';
 import '../models/seat.dart';
 import '../utils/constants.dart';
-import '../widgets/seat_item.dart';
+import '../widgets/seat.dart'; // Import layout grid kursi bawaan
+import '../widgets/booking_info.dart'; // Import bottom bar gabungan yang baru
 import 'payment_screen.dart';
 
 class SeatScreen extends StatefulWidget {
@@ -27,90 +28,13 @@ class SeatScreen extends StatefulWidget {
 }
 
 class _SeatScreenState extends State<SeatScreen> {
-  late List<List<Seat?>> _rows;
-
-  static const _bookedIds = {
-    'A1',
-    'A2',
-    'A5',
-    'A6',
-    'A7',
-    'B2',
-    'B3',
-    'B8',
-    'B9',
-    'B10',
-    'C4',
-    'C5',
-    'C9',
-    'D1',
-    'D4',
-    'D5',
-    'D9',
-    'D10',
-    'E3',
-    'E6',
-  };
-
-  @override
-  void initState() {
-    super.initState();
-    _rows = _generateRows();
-  }
-
-  List<List<Seat?>> _generateRows() {
-    const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const totalCols = 10;
-    const aisleAfter = 4;
-
-    return rowLetters.map((row) {
-      final cols = <Seat?>[];
-      for (int col = 1; col <= totalCols; col++) {
-        if (col == aisleAfter + 1) cols.add(null);
-        final id = '$row$col';
-        cols.add(
-          Seat(
-            id: id,
-            row: row,
-            number: col,
-            status: _bookedIds.contains(id)
-                ? SeatStatus.booked
-                : SeatStatus.available,
-          ),
-        );
-      }
-      return cols;
-    }).toList();
-  }
-
-  // ── State helpers ──────────────────────────────────────────
-
-  List<Seat> get _selectedSeats => _rows
-      .expand((r) => r)
-      .whereType<Seat>()
-      .where((s) => s.status == SeatStatus.selected)
-      .toList();
+  List<Seat> _selectedSeats = [];
 
   int get _totalPrice => _selectedSeats.length * widget.ticketPrice;
 
   String get _selectedLabels {
     final labels = _selectedSeats.map((s) => s.id).toList()..sort();
     return labels.isEmpty ? '-' : labels.join(', ');
-  }
-
-  // ── Actions ────────────────────────────────────────────────
-
-  void _toggleSeat(int rowIdx, int colIdx) {
-    final seat = _rows[rowIdx][colIdx];
-    if (seat == null || !seat.isSelectable) return;
-
-    setState(() {
-      _rows[rowIdx][colIdx] = seat.copyWith(
-        status: seat.status == SeatStatus.selected
-            ? SeatStatus.available
-            : SeatStatus.selected,
-      );
-    });
   }
 
   void _onBooking() {
@@ -129,9 +53,6 @@ class _SeatScreenState extends State<SeatScreen> {
     );
   }
 
-  // ── Helpers ────────────────────────────────────────────────
-
-  // Di web/desktop pakai ClampingScrollPhysics, mobile pakai Bouncing
   ScrollPhysics get _scrollPhysics =>
       kIsWeb ? const ClampingScrollPhysics() : const BouncingScrollPhysics();
 
@@ -144,32 +65,19 @@ class _SeatScreenState extends State<SeatScreen> {
         _ => false,
       };
 
-  // Seat size dihitung dari lebar layar aktual
-  double _calcSeatSize(BuildContext context) {
-    const seatsPerRow = 10;
-    const aisleWidth = 18.0;
-    const gridPadding = 32.0; // padding kiri+kanan grid (16*2)
-    const totalSeatSpacing = 60.0; // 3px kiri + 3px kanan * 10 seats
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    final contentWidth = screenWidth.clamp(0.0, AppConstants.maxWidth);
-
-    final usable = contentWidth - gridPadding - aisleWidth - totalSeatSpacing;
-    final size = usable / seatsPerRow;
-
-    return size.clamp(24.0, 52.0);
-  }
-
   double _calcSeatGridWidth(BuildContext context) {
     const seatsPerRow = 10;
     const aisleWidth = 18.0;
+    const gridPadding = 32.0;
     const totalSeatSpacing = 60.0;
 
-    final seatSize = _calcSeatSize(context);
-    return (seatsPerRow * seatSize) + aisleWidth + totalSeatSpacing;
-  }
+    final screenWidth = MediaQuery.of(context).size.width;
+    final contentWidth = screenWidth.clamp(0.0, AppConstants.maxWidth);
+    final usable = contentWidth - gridPadding - aisleWidth - totalSeatSpacing;
+    final size = (usable / seatsPerRow).clamp(24.0, 52.0);
 
-  // ── Build ──────────────────────────────────────────────────
+    return (seatsPerRow * size) + aisleWidth + totalSeatSpacing;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,30 +87,7 @@ class _SeatScreenState extends State<SeatScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         toolbarHeight: 80,
-        leadingWidth: 70,
-        leading: Padding(
-          padding: const EdgeInsets.only(left: 16.0),
-          child: Center(
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white10),
-              ),
-              child: IconButton(
-                padding: EdgeInsets.zero,
-                icon: const Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: 20,
-                ),
-                onPressed: () => Navigator.pop(context),
-              ),
-            ),
-          ),
-        ),
+        leading: const BackButton(color: Colors.white),
         title: Text(
           widget.movie.title,
           style: const TextStyle(
@@ -215,7 +100,6 @@ class _SeatScreenState extends State<SeatScreen> {
       ),
       body: Center(
         child: ConstrainedBox(
-          // Max width supaya tidak melar di desktop/web
           constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
           child: Column(
             children: [
@@ -225,231 +109,32 @@ class _SeatScreenState extends State<SeatScreen> {
                   child: Column(
                     children: [
                       const SizedBox(height: 12),
-                      _buildScreenCurve(),
-                      const SizedBox(height: 28),
-                      _buildSeatGrid(),
+
+                      // Menampilkan layout layar dan susunan kursi
+                      CinemaSeatLayout(
+                        onSelectionChanged: (seats) {
+                          setState(() {
+                            _selectedSeats = seats;
+                          });
+                        },
+                      ),
+
                       const SizedBox(height: 20),
                     ],
                   ),
                 ),
               ),
               SafeArea(
-                top: false, // AppBar sudah handle bagian atas
-                child: Column(
-                  children: [
-                    _buildLegend(),
-                    const SizedBox(height: 8),
-                    _buildBottomBar(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildScreenCurve() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        children: [
-          CustomPaint(
-            painter: _ScreenCurvePainter(),
-            child: const SizedBox(width: double.infinity, height: 18),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'LAYAR BIOSKOP',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              letterSpacing: 2.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeatGrid() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final seatSize = _calcSeatSize(context);
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: List.generate(_rows.length, (rowIdx) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_rows[rowIdx].length, (colIdx) {
-                    final seat = _rows[rowIdx][colIdx];
-
-                    if (seat == null) return const SizedBox(width: 18);
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: SeatItem(
-                        seat: seat,
-                        size: seatSize,
-                        onTap: () => _toggleSeat(rowIdx, colIdx),
-                      ),
-                    );
-                  }),
-                ),
-              );
-            }),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildLegend() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _legendDot(const Color(0xFFF5F5F5), 'Available'),
-        const SizedBox(width: 24),
-        _legendDot(AppConstants.primaryColor, 'Booked'),
-        const SizedBox(width: 24),
-        _legendDot(Colors.lightBlue, 'Selected'),
-      ],
-    );
-  }
-
-  Widget _legendDot(Color color, String label) {
-    return Row(
-      children: [
-        Container(
-          width: 14,
-          height: 14,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppConstants.textSecondary,
-            fontSize: 12,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomBar() {
-    final barWidth = _calcSeatGridWidth(context);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppConstants.padding,
-        0,
-        AppConstants.padding,
-        16,
-      ),
-      child: Center(
-        child: SizedBox(
-          width: barWidth,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: AppConstants.cardColor,
-                  borderRadius: BorderRadius.circular(
-                    AppConstants.borderRadius,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total',
-                            style: TextStyle(
-                              color: AppConstants.textMuted,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${AppConstants.defaultCurrency}${_formatNumber(_totalPrice)}',
-                            style: const TextStyle(
-                              color: AppConstants.textPrimary,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(width: 1, height: 36, color: Colors.white12),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Seat',
-                              style: TextStyle(
-                                color: AppConstants.textMuted,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _selectedLabels,
-                              style: const TextStyle(
-                                color: AppConstants.textPrimary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.center,
-                child: SizedBox(
-                  width: _isDesktopOrWeb ? 360 : double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.primaryColor,
-                      disabledBackgroundColor: AppConstants.primaryColor
-                          .withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.borderRadius,
-                        ),
-                      ),
-                    ),
-                    onPressed: _selectedSeats.isEmpty ? null : _onBooking,
-                    child: const Text(
-                      'Booking',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                top: false,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  // Cukup panggil satu widget ini, legend sudah otomatis include di dalamnya
+                  child: BookingInfo(
+                    totalPrice: _totalPrice,
+                    selectedLabels: _selectedLabels,
+                    barWidth: _calcSeatGridWidth(context),
+                    isDesktopOrWeb: _isDesktopOrWeb,
+                    onBooking: _selectedSeats.isEmpty ? null : _onBooking,
                   ),
                 ),
               ),
@@ -459,30 +144,4 @@ class _SeatScreenState extends State<SeatScreen> {
       ),
     );
   }
-
-  String _formatNumber(int amount) {
-    return amount.toString().replaceAllMapped(
-      RegExp(r'(\d)(?=(\d{3})+$)'),
-      (m) => '${m[1]}.',
-    );
-  }
-}
-
-class _ScreenCurvePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..moveTo(0, size.height)
-      ..quadraticBezierTo(size.width / 2, 0, size.width, size.height);
-
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
 }

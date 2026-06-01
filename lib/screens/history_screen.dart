@@ -4,6 +4,7 @@ import '../models/movie.dart';
 import '../widgets/bottom_nav.dart';
 import '../utils/constants.dart';
 import '../data/movie_data.dart';
+import '../utils/helpers.dart'; // Import helper global
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
@@ -74,7 +75,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
               );
               break;
             case 1:
-              // Already on history
               break;
             case 2:
               Navigator.push(
@@ -88,7 +88,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Header
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: horizontalPadding,
@@ -97,10 +96,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  // Mengganti Container bulatan lama dengan BackButton bawaan Flutter
-                  Align(
+                  const Align(
                     alignment: Alignment.centerLeft,
-                    child: const BackButton(color: Colors.white),
+                    child: BackButton(color: Colors.white),
                   ),
                   const Text(
                     'History',
@@ -113,7 +111,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
             ),
-            // Booking list
             Expanded(
               child: bookings.isEmpty
                   ? Center(
@@ -180,33 +177,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Poster
-            if (movie != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  movie.imagePath,
-                  width: 120,
-                  height: 160,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else
-              Container(
-                width: 120,
-                height: 160,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildPoster(movie, 120, 160),
             const SizedBox(width: 24),
-            // Movie info
             Expanded(child: _buildMovieInfo(booking, movie)),
           ],
         ),
         const SizedBox(height: 16),
-        // Action button at bottom right
         Align(
           alignment: Alignment.bottomRight,
           child: _buildActionButton(booking),
@@ -222,38 +198,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Poster
-            if (movie != null)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  movie.imagePath,
-                  width: 100,
-                  height: 140,
-                  fit: BoxFit.cover,
-                ),
-              )
-            else
-              Container(
-                width: 100,
-                height: 140,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+            _buildPoster(movie, 100, 140),
             const SizedBox(width: 16),
-            // Movie info
             Expanded(child: _buildMovieInfo(booking, movie)),
           ],
         ),
         const SizedBox(height: 16),
-        // Action button at bottom right
         Align(
           alignment: Alignment.bottomRight,
           child: _buildActionButton(booking),
         ),
       ],
+    );
+  }
+
+  Widget _buildPoster(Movie? movie, double w, double h) {
+    if (movie != null) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.asset(
+          movie.imagePath,
+          width: w,
+          height: h,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+    return Container(
+      width: w,
+      height: h,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
     );
   }
 
@@ -292,7 +269,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            'Rp${booking.totalPrice.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.')}',
+            'Rp ${AppHelpers.formatNumber(booking.totalPrice)}', // Panggilan Helper Global
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
