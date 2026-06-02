@@ -8,7 +8,6 @@ import 'profile_screen.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
-import '../widgets/city_picker.dart';
 import '../widgets/app_footer.dart'; // <-- Tambahkan import ini
 
 class HomeScreen extends StatefulWidget {
@@ -19,8 +18,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCity = "Choose City";
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,10 +76,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: 80),
-                  
+
                   // Panggil widget AppFooter di sini
-                  const AppFooter(), 
-                  
+                  const AppFooter(),
+
                   const SizedBox(height: 20),
                 ],
               ),
@@ -100,31 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _openCityPicker() async {
-    final selected = await showGeneralDialog<String>(
-      context: context,
-      barrierDismissible: true,
-      barrierLabel: '',
-      pageBuilder: (context, anim1, anim2) {
-        return CityPickerDialog(currentCity: _selectedCity);
-      },
-    );
-
-    if (selected != null && selected != _selectedCity) {
-      setState(() => _selectedCity = selected);
-    }
-  }
-
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const AppLogo(),
-        _CitySelectorButton(
-          selectedCity: _selectedCity,
-          onTap: _openCityPicker,
-        ),
-      ],
+      children: [const AppLogo()],
     );
   }
 
@@ -147,51 +123,6 @@ class _HomeScreenState extends State<HomeScreen> {
             Text(
               "Search for movies or genres",
               style: TextStyle(color: AppConstants.textMuted),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CitySelectorButton extends StatelessWidget {
-  final String selectedCity;
-  final VoidCallback onTap;
-
-  const _CitySelectorButton({required this.selectedCity, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(21),
-      child: Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: const Color(0xFF222222),
-          borderRadius: BorderRadius.circular(19),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.location_on_rounded,
-              color: Colors.white,
-              size: 16,
-            ),
-            const SizedBox(width: 8),
-            Flexible(
-              child: Text(
-                selectedCity.toUpperCase(),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 12,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
             ),
           ],
         ),
