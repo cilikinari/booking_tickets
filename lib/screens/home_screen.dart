@@ -9,6 +9,8 @@ import '../widgets/bottom_nav.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart'; // <-- Tambahkan import ini
+import '../widgets/city_picker.dart';
+import '../data/city_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +20,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String selectedCity = 'Choose City'; // Jakarta as default
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,7 +104,56 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [const AppLogo()],
+      children: [const AppLogo(), _buildCitySelector()],
+    );
+  }
+
+  Widget _buildCitySelector() {
+    return GestureDetector(
+      onTap: () async {
+        final result = await showDialog<String>(
+          context: context,
+          builder: (_) => CityPickerDialog(currentCity: selectedCity),
+        );
+        if (result != null) {
+          setState(() {
+            selectedCity = result;
+          });
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppConstants.cardColor,
+          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.location_on,
+              color: AppConstants.primaryColor,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              selectedCity,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.arrow_drop_down,
+              color: AppConstants.textMuted,
+              size: 18,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
