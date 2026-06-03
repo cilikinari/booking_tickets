@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../data/movie_data.dart';
+import 'package:provider/provider.dart';
+import '../../domain/providers/movie_provider.dart';
 import '../../utils/constants.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
-import '../widgets/app_footer.dart'; // <-- Import AppFooter
+import '../widgets/app_footer.dart';
 import 'login_screen.dart';
 import 'register.dart';
 
@@ -12,6 +13,8 @@ class HomeUnauthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final movieProvider = Provider.of<MovieProvider>(context);
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: SafeArea(
@@ -29,7 +32,7 @@ class HomeUnauthScreen extends StatelessWidget {
                   // Section Top Movies
                   MovieSection(
                     title: "Top Movies",
-                    movies: MovieData.topMovies,
+                    movies: movieProvider.topMovies, // 🟢 Diambil dari Provider
                     isWide: true,
                     onMovieTap: null,
                   ),
@@ -39,7 +42,8 @@ class HomeUnauthScreen extends StatelessWidget {
                   // Section Now Showing
                   MovieSection(
                     title: "Now Showing",
-                    movies: MovieData.nowPlaying,
+                    movies:
+                        movieProvider.nowPlaying, // 🟢 Diambil dari Provider
                     isWide: false,
                     onMovieTap: null,
                   ),

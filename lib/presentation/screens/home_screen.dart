@@ -10,7 +10,6 @@ import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart'; // <-- Tambahkan import ini
 import '../widgets/city_picker.dart';
-import '../../data/city_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

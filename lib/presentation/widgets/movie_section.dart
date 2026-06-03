@@ -5,7 +5,7 @@ class MovieSection extends StatelessWidget {
   final String title; // Tambahkan parameter title
   final List<Movie> movies;
   final bool isWide;
-  final Function(Movie)? onMovieTap; 
+  final Function(Movie)? onMovieTap;
 
   const MovieSection({
     super.key,
@@ -41,7 +41,7 @@ class MovieSection extends StatelessWidget {
                   isWide: isWide,
                   onTap: () {
                     if (onMovieTap != null) {
-                      onMovieTap!(movie); 
+                      onMovieTap!(movie);
                     }
                   },
                 ),
@@ -57,7 +57,7 @@ class MovieSection extends StatelessWidget {
 class MovieCard extends StatelessWidget {
   final Movie movie;
   final bool isWide;
-  final VoidCallback? onTap; 
+  final VoidCallback? onTap;
 
   const MovieCard({
     super.key,
@@ -69,7 +69,7 @@ class MovieCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap, 
+      onTap: onTap,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

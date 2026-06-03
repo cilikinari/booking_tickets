@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-// ignore: unused_import
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
+import 'package:provider/provider.dart'; // 🟢 1. Pastikan import provider
+import 'domain/providers/movie_provider.dart'; // 🟢 2. Sesuaikan dengan path MovieProvider-mu
 import 'presentation/screens/home_unauth_screen.dart';
 
 void main() {
@@ -13,19 +12,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      scrollBehavior: _AppScrollBehavior(),
-      home: const HomeUnauthScreen(),
+    // 🟢 3. Bungkus MaterialApp kamu dengan MultiProvider
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => MovieProvider()),
+        // Nanti kalau ada AuthProvider atau TicketProvider tinggal tambah di bawah sini
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Bioskop App',
+        theme: ThemeData.dark(), // Sesuaikan dengan tema aplikasimu
+        home: const HomeUnauthScreen(),
+      ),
     );
   }
-}
-
-class _AppScrollBehavior extends MaterialScrollBehavior {
-  @override
-  Set<PointerDeviceKind> get dragDevices => {
-    PointerDeviceKind.touch,
-    PointerDeviceKind.mouse,
-    PointerDeviceKind.trackpad,
-  };
 }
