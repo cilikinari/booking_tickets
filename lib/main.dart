@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // 🟢 1. Pastikan import provider
 import 'domain/providers/movie_provider.dart'; // 🟢 2. Sesuaikan dengan path MovieProvider-mu
+import 'domain/providers/location_provider.dart'; // 🟢 3. Tambahkan import LocationProvider
 import 'presentation/screens/home_unauth_screen.dart';
 
 void main() {
@@ -16,6 +17,8 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MovieProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+
         // Nanti kalau ada AuthProvider atau TicketProvider tinggal tambah di bawah sini
       ],
       child: MaterialApp(

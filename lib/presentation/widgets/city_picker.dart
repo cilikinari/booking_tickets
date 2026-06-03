@@ -1,35 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../data/city_data.dart';
+import 'package:provider/provider.dart';
+import '../../domain/providers/location_provider.dart';
 import '../../utils/constants.dart';
 
-class CityPickerDialog extends StatefulWidget {
-  final String currentCity;
+class CityPickerDialog extends StatelessWidget {
+  CityPickerDialog({super.key});
 
-  const CityPickerDialog({super.key, required this.currentCity});
-
-  @override
-  State<CityPickerDialog> createState() => _CityPickerDialogState();
-}
-
-class _CityPickerDialogState extends State<CityPickerDialog> {
   final TextEditingController _citySearchController = TextEditingController();
 
   @override
-  void dispose() {
-    _citySearchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    // Logic filter dipindah ke sini
-    final filteredCities = CityData.cities
-        .where(
-          (city) => city.toLowerCase().contains(
-            _citySearchController.text.toLowerCase(),
-          ),
-        )
-        .toList();
+    // 🟢 Ambil state lokasi dari Provider
+    final locationProvider = Provider.of<LocationProvider>(context);
 
     return Stack(
       children: [
@@ -70,9 +52,14 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
                       ),
                     ),
                   ),
-                  _buildSearchInput(),
+                  _buildSearchInput(
+                    locationProvider,
+                  ), // 🟢 Oper provider ke input
                   const SizedBox(height: 12),
-                  _buildCityList(filteredCities),
+                  _buildCityList(
+                    locationProvider,
+                    context,
+                  ), // 🟢 Oper provider ke list
                 ],
               ),
             ),
@@ -82,7 +69,7 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
     );
   }
 
-  Widget _buildSearchInput() {
+  Widget _buildSearchInput(LocationProvider provider) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -99,8 +86,8 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
             Expanded(
               child: TextField(
                 controller: _citySearchController,
-                onChanged: (_) =>
-                    setState(() {}), // Trigger rebuild hanya di widget ini
+                // 🟢 Panggil fungsi filter di provider saat mengetik
+                onChanged: (text) => provider.filterCities(text),
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: const InputDecoration(
                   hintText: "Search city",
@@ -117,7 +104,9 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
                 icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
                 onPressed: () {
                   _citySearchController.clear();
-                  setState(() {});
+                  provider.filterCities(
+                    "",
+                  ); // 🟢 Reset pencarian lewat provider
                 },
               ),
           ],
@@ -126,12 +115,14 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
     );
   }
 
-  Widget _buildCityList(List<String> filteredCities) {
+  Widget _buildCityList(LocationProvider provider, BuildContext context) {
+    final cities = provider.filteredCities;
+
     return Flexible(
       child: ListView.separated(
         shrinkWrap: true,
         padding: const EdgeInsets.only(bottom: 12),
-        itemCount: filteredCities.length,
+        itemCount: cities.length,
         separatorBuilder: (context, index) => Divider(
           color: Colors.white.withOpacity(0.05),
           height: 1,
@@ -139,8 +130,9 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
           endIndent: 20,
         ),
         itemBuilder: (context, index) {
-          final city = filteredCities[index];
-          final selected = city == widget.currentCity;
+          final city = cities[index];
+          // 🟢 Mengecek status selected secara global dari provider
+          final selected = city == provider.selectedCity;
 
           return ListTile(
             leading: Icon(
@@ -160,7 +152,8 @@ class _CityPickerDialogState extends State<CityPickerDialog> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 20),
             dense: true,
             onTap: () {
-              // Lempar data kota yang dipilih kembali ke HomeScreen
+              // 🟢 Perbarui kota aktif di dalam state manajemen aplikasi Anda
+              provider.updateCity(city);
               Navigator.pop(context, city);
             },
           );

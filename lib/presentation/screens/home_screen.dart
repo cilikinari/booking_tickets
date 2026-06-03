@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../data/movie_data.dart';
+import 'package:provider/provider.dart';
+import '../../data/models/movie.dart';
+import '../../domain/providers/movie_provider.dart';
+import '../../domain/providers/location_provider.dart'; // 🟢 Tambahkan import LocationProvider
 import '../../utils/constants.dart';
 import 'detail_screen.dart';
 import 'search_screen.dart';
@@ -8,43 +11,25 @@ import 'profile_screen.dart';
 import '../widgets/bottom_nav.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
-import '../widgets/app_footer.dart'; // <-- Tambahkan import ini
+import '../widgets/app_footer.dart';
 import '../widgets/city_picker.dart';
 
-class HomeScreen extends StatefulWidget {
+// 🟢 Diubah menjadi StatelessWidget karena tidak ada State lokal lagi
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String selectedCity = 'Choose City'; // Jakarta as default
-
-  @override
   Widget build(BuildContext context) {
+    // 🟢 Mengambil data film dan lokasi dari Provider pusat
+    final movieProvider = Provider.of<MovieProvider>(context);
+    final locationProvider = Provider.of<LocationProvider>(context);
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 0,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              break;
-            case 1:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const HistoryScreen()),
-              );
-              break;
-            case 2:
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-              break;
-          }
-        },
+        onTap: (index) =>
+            _onBottomNavTap(context, index), // 🟢 Dipisah ke fungsi helper
       ),
       body: SafeArea(
         child: Center(
@@ -55,7 +40,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(),
+                  _buildHeader(
+                    context,
+                    locationProvider,
+                  ), // 🟢 Oper provider lokasi ke header
                   const SizedBox(height: 16),
                   _buildSearchBar(context),
                   const SizedBox(height: 24),
@@ -63,9 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Section Top Movies
                   MovieSection(
                     title: "Top Movies",
-                    movies: MovieData.topMovies,
+                    movies: movieProvider.topMovies,
                     isWide: true,
-                    onMovieTap: (movie) => _navigateToDetail(movie),
+                    onMovieTap: (movie) => _navigateToDetail(context, movie),
                   ),
 
                   const SizedBox(height: 24),
@@ -73,16 +61,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Section Now Showing
                   MovieSection(
                     title: "Now Showing",
-                    movies: MovieData.nowPlaying,
+                    movies: movieProvider.nowPlaying,
                     isWide: false,
-                    onMovieTap: (movie) => _navigateToDetail(movie),
+                    onMovieTap: (movie) => _navigateToDetail(context, movie),
                   ),
 
                   const SizedBox(height: 80),
-
-                  // Panggil widget AppFooter di sini
                   const AppFooter(),
-
                   const SizedBox(height: 20),
                 ],
               ),
@@ -93,32 +78,56 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _navigateToDetail(dynamic movie) {
+  // 🟢 Helper untuk navigasi menu bawah
+  void _onBottomNavTap(BuildContext context, int index) {
+    switch (index) {
+      case 0:
+        break;
+      case 1:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const HistoryScreen()),
+        );
+        break;
+      case 2:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+        );
+        break;
+    }
+  }
+
+  void _navigateToDetail(BuildContext context, Movie movie) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => DetailScreen(movie: movie)),
     );
   }
 
-  Widget _buildHeader() {
+  // 🟢 Terima parameter locationProvider
+  Widget _buildHeader(BuildContext context, LocationProvider locationProvider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [const AppLogo(), _buildCitySelector()],
+      children: [
+        const AppLogo(),
+        _buildCitySelector(context, locationProvider),
+      ],
     );
   }
 
-  Widget _buildCitySelector() {
+  // 🟢 Logika showDialog disederhanakan tanpa perlu menangkap variabel return manual
+  Widget _buildCitySelector(
+    BuildContext context,
+    LocationProvider locationProvider,
+  ) {
     return GestureDetector(
-      onTap: () async {
-        final result = await showDialog<String>(
+      onTap: () {
+        showDialog(
           context: context,
-          builder: (_) => CityPickerDialog(currentCity: selectedCity),
+          builder: (_) =>
+              CityPickerDialog(), // Constructor bersih tanpa kirim parameter manual
         );
-        if (result != null) {
-          setState(() {
-            selectedCity = result;
-          });
-        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -137,7 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 8),
             Text(
-              selectedCity,
+              // 🟢 Menampilkan data langsung dari state global lokasi
+              locationProvider.selectedCity,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 14,
