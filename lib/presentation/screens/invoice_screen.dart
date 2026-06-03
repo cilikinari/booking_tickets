@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🟢 Tambahkan import Provider
 import '../../data/models/booking.dart';
+import '../../domain/providers/history_provider.dart'; // 🟢 Tambahkan import HistoryProvider
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart'; // Import helper global
 
@@ -50,9 +52,10 @@ class InvoiceScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         _TicketHeader(booking: booking),
-                        const _TicketDashedDivider(), // Tetap di file ini
+                        const _TicketDashedDivider(), 
                         _TicketDetails(booking: booking),
-                        _TicketFooter(totalPrice: booking.totalPrice),
+                        // 🟢 Digabungkan dengan widget asli milik Anda di bawah
+                        _TicketFooter(totalPrice: booking.totalPrice), 
                       ],
                     ),
                   ),
@@ -79,8 +82,13 @@ class InvoiceScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        onPressed: () =>
-            Navigator.of(context).popUntil((route) => route.isFirst),
+        onPressed: () {
+          // 🟢 AMANKAN DATA: Kirim data tiket sukses ini ke dalam daftar riwayat global sebelum pulang ke home
+          Provider.of<HistoryProvider>(context, listen: false).addBookingToHistory(booking);
+
+          // Kembali ke HomeScreen dengan bersih
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
         child: const Text(
           'Back to Home',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -282,6 +290,7 @@ class _TicketDetails extends StatelessWidget {
   }
 }
 
+// 🟢 WIDGET ASLI MILIK ANDA (Sekarang sudah tergabung sempurna tanpa terpotong)
 class _TicketFooter extends StatelessWidget {
   final double totalPrice;
   const _TicketFooter({required this.totalPrice});
@@ -309,7 +318,7 @@ class _TicketFooter extends StatelessWidget {
             ),
           ),
           Text(
-            'Rp ${AppHelpers.formatNumber(totalPrice)}', // Menggunakan helper baru
+            'Rp ${AppHelpers.formatNumber(totalPrice)}', 
             style: const TextStyle(
               color: Colors.black87,
               fontWeight: FontWeight.w900,

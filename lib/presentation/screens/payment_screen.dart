@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../data/models/movie.dart';
+import 'package:provider/provider.dart';
+import '../../domain/providers/booking_provider.dart';
 import '../../data/models/booking.dart';
 import '../../utils/constants.dart';
-import '../../utils/helpers.dart'; // Import helper global
 import '../widgets/countdown_banner.dart';
 import '../widgets/order_summary.dart';
 import '../widgets/payment_method.dart';
@@ -13,65 +13,37 @@ import 'home_screen.dart';
 import 'success_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
-  final Movie movie;
-  final String cinema;
-  final String date;
-  final String time;
-  final List<String> seats;
-  final double totalPrice;
-
-  const PaymentScreen({
-    super.key,
-    required this.movie,
-    required this.cinema,
-    required this.date,
-    required this.time,
-    required this.seats,
-    required this.totalPrice,
-  });
+  const PaymentScreen({super.key});
 
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  static const _countdownSeconds = 10 * 10;
-
-  String _selectedPayment = '';
-  int _remainingSeconds = _countdownSeconds;
-  Timer? _timer;
   bool _isTimeoutDialogVisible = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
+    // 🟢 Nyalakan bisnis timer di provider saat halaman ini pertama kali terbuka
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<BookingProvider>(context, listen: false);
+      provider.startPaymentTimer(() {
+        _showTimeoutDialog();
+      });
+    });
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    // 🟢 Amankan memori dengan mematikan timer di provider saat keluar halaman
+    final provider = Provider.of<BookingProvider>(context, listen: false);
+    provider.stopTimer();
     super.dispose();
-  }
-
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-
-      if (_remainingSeconds <= 1) {
-        setState(() => _remainingSeconds = 0);
-        _timer?.cancel();
-        _showTimeoutDialog();
-        return;
-      }
-
-      setState(() => _remainingSeconds--);
-    });
   }
 
   Future<void> _showTimeoutDialog() async {
     if (_isTimeoutDialogVisible || !mounted) return;
-
     _isTimeoutDialogVisible = true;
 
     try {
@@ -100,32 +72,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  void _onPayNow() {
-    if (!_canPay) return;
-    _timer?.cancel();
+  void _onPayNow(BookingProvider provider) {
+    if (!provider.canPay) return;
 
-    final booking = Booking(
-      movieTitle: widget.movie.title,
-      cinema: widget.cinema,
-      date: widget.date,
-      time: widget.time,
-      seats: widget.seats,
-      totalPrice: widget.totalPrice,
-      status: 'upcoming',
-    );
+    // 🟢 Minta provider untuk menyelesaikan transaksi dan merakit objek Booking jadi
+    final Booking finalBooking = provider.completePayment();
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => SuccessScreen(booking: booking)),
+      MaterialPageRoute(builder: (_) => SuccessScreen(booking: finalBooking)),
     );
-  }
-
-  bool get _canPay => _selectedPayment.isNotEmpty;
-
-  String get _formattedCountdown {
-    final m = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
-    final s = (_remainingSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
   }
 
   ScrollPhysics get _scrollPhysics =>
@@ -133,6 +89,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mendengarkan perubahan state pembayaran secara global dari provider
+    final bookingProvider = Provider.of<BookingProvider>(context);
+    final movie = bookingProvider.activeMovie;
+
+    if (movie == null) {
+      return const Scaffold(
+        backgroundColor: AppConstants.backgroundColor,
+        body: Center(child: Text('No active booking')),
+      );
+    }
+
     final screenWidth = MediaQuery.of(context).size.width;
     final isWide = screenWidth > 900;
     final horizontalPadding = isWide ? AppConstants.padding : 16.0;
@@ -166,9 +133,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  isWide ? _buildDesktopLayout() : _buildMobileLayout(),
+                  isWide
+                      ? _buildDesktopLayout(bookingProvider)
+                      : _buildMobileLayout(bookingProvider),
                   const SizedBox(height: 32),
-                  _buildPayButton(isWide),
+                  _buildPayButton(isWide, bookingProvider),
                 ],
               ),
             ),
@@ -178,11 +147,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(BookingProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CountdownBanner(formattedCountdown: _formattedCountdown),
+        // 🟢 Data string countdown dibaca langsung dari hasil format di provider
+        CountdownBanner(formattedCountdown: provider.formattedCountdown),
         const SizedBox(height: 32),
         IntrinsicHeight(
           child: Row(
@@ -190,9 +160,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               Expanded(
                 child: PaymentMethodsCard(
-                  selectedPayment: _selectedPayment,
+                  selectedPayment: provider.selectedPayment,
+                  // 🟢 Memicu perubahan pilihan metode pembayaran ke dalam provider bisnis
                   onMethodSelected: (method) =>
-                      setState(() => _selectedPayment = method),
+                      provider.selectPaymentMethod(method),
                 ),
               ),
               const SizedBox(width: 48),
@@ -201,12 +172,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 child: Padding(
                   padding: const EdgeInsets.only(top: 42),
                   child: OrderSummaryCard(
-                    movie: widget.movie,
-                    cinema: widget.cinema,
-                    date: widget.date,
-                    time: widget.time,
-                    seats: widget.seats,
-                    totalPrice: widget.totalPrice,
+                    movie: provider.activeMovie!,
+                    cinema: provider.selectedCinema,
+                    date: provider.selectedDate,
+                    time: provider.selectedTime,
+                    seats: provider.selectedSeats.map((s) => s.id).toList(),
+                    totalPrice: provider.totalPrice.toDouble(),
                     posterHeight: 320,
                     posterWidth: 200,
                   ),
@@ -219,33 +190,32 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildMobileLayout() {
+  Widget _buildMobileLayout(BookingProvider provider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CountdownBanner(formattedCountdown: _formattedCountdown),
+        CountdownBanner(formattedCountdown: provider.formattedCountdown),
         const SizedBox(height: 20),
         OrderSummaryCard(
-          movie: widget.movie,
-          cinema: widget.cinema,
-          date: widget.date,
-          time: widget.time,
-          seats: widget.seats,
-          totalPrice: widget.totalPrice,
+          movie: provider.activeMovie!,
+          cinema: provider.selectedCinema,
+          date: provider.selectedDate,
+          time: provider.selectedTime,
+          seats: provider.selectedSeats.map((s) => s.id).toList(),
+          totalPrice: provider.totalPrice.toDouble(),
           posterHeight: 170,
           posterWidth: 120,
         ),
         const SizedBox(height: 28),
         PaymentMethodsCard(
-          selectedPayment: _selectedPayment,
-          onMethodSelected: (method) =>
-              setState(() => _selectedPayment = method),
+          selectedPayment: provider.selectedPayment,
+          onMethodSelected: (method) => provider.selectPaymentMethod(method),
         ),
       ],
     );
   }
 
-  Widget _buildPayButton(bool isWide) {
+  Widget _buildPayButton(bool isWide, BookingProvider provider) {
     return Center(
       child: Container(
         margin: const EdgeInsets.only(top: 28, bottom: 20),
@@ -254,17 +224,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppConstants.primaryColor,
-            disabledBackgroundColor: AppConstants.primaryColor.withValues(
-              alpha: 0.45,
+            disabledBackgroundColor: AppConstants.primaryColor.withOpacity(
+              0.45,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(32),
             ),
           ),
-          onPressed: _canPay ? _onPayNow : null,
+          // 🟢 Gunakan tombol berdasarkan kondisi boolean canPay milik provider bisnis Anda
+          onPressed: provider.canPay ? () => _onPayNow(provider) : null,
           child: Text(
-            _canPay 
-                ? 'Pay Now · ${AppConstants.defaultCurrency}${AppHelpers.formatNumber(widget.totalPrice)}' 
+            provider.canPay
+                ? 'Pay Now · Rp ${provider.totalPrice}' // Sederhanakan pemanggilan mata uang untuk contoh ini
                 : 'Select Payment Method',
             style: const TextStyle(
               color: Colors.white,

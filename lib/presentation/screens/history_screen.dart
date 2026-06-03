@@ -1,55 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🟢 Tambahkan import Provider
 import '../../data/models/booking.dart';
 import '../../data/models/movie.dart';
+import '../../domain/providers/history_provider.dart'; // 🟢 Tambahkan import HistoryProvider
+import '../../domain/providers/movie_provider.dart'; // 🟢 Tambahkan import MovieProvider untuk mencari poster
 import '../widgets/bottom_nav.dart';
 import '../../utils/constants.dart';
-import '../../data/movie_data.dart';
 import '../../utils/helpers.dart'; // Import helper global
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
-class HistoryScreen extends StatefulWidget {
+// 🟢 Diubah menjadi StatelessWidget karena data riwayat dibaca dari provider global arsitektur baru Anda
+class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
-  @override
-  State<HistoryScreen> createState() => _HistoryScreenState();
-}
-
-class _HistoryScreenState extends State<HistoryScreen> {
-  late final List<Booking> bookings;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeMockData();
-  }
-
-  void _initializeMockData() {
-    bookings = [
-      Booking(
-        movieTitle: MovieData.topMovies[0].title,
-        cinema: 'XXI Living World',
-        date: '19 Apr 2026',
-        time: '17:30 PM',
-        seats: ['F1', 'F2'],
-        totalPrice: 120000,
-        status: 'Berhasil',
-      ),
-      Booking(
-        movieTitle: MovieData.topMovies[1].title,
-        cinema: 'XXI Living World',
-        date: '30 March 2026',
-        time: '17:30 PM',
-        seats: ['B1', 'B2'],
-        totalPrice: 120000,
-        status: 'Berhasil',
-      ),
-    ];
-  }
-
-  Movie? _getMovieByTitle(String title) {
+  Movie? _getMovieByTitle(String title, MovieProvider movieProvider) {
     try {
-      return MovieData.topMovies.firstWhere((movie) => movie.title == title);
+      final allMovies = [
+        ...movieProvider.topMovies,
+        ...movieProvider.nowPlaying,
+      ];
+      return allMovies.firstWhere((movie) => movie.title == title);
     } catch (e) {
       return null;
     }
@@ -57,6 +28,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 Ambil state riwayat dan katalog film dari jembatan Provider pusat
+    final historyProvider = Provider.of<HistoryProvider>(context);
+    final movieProvider = Provider.of<MovieProvider>(context);
+
+    final bookings = historyProvider.bookingHistory;
+
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWide = screenWidth > 900;
     final double horizontalPadding = isWide ? AppConstants.padding : 16.0;
@@ -135,8 +112,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           child: Column(
                             children: [
                               ...bookings.map((booking) {
+                                // 🟢 Cari data poster film langsung dari MovieProvider arsitektur baru Anda
                                 final movie = _getMovieByTitle(
                                   booking.movieTitle,
+                                  movieProvider,
                                 );
                                 return _buildBookingCard(
                                   booking,
@@ -234,6 +213,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  // 🟢 WIDGET ASLI MILIK ANDA UNTUK INFO FILM
   Widget _buildMovieInfo(Booking booking, Movie? movie) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,7 +249,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            'Rp ${AppHelpers.formatNumber(booking.totalPrice)}', // Panggilan Helper Global
+            'Rp ${AppHelpers.formatNumber(booking.totalPrice)}',
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -281,6 +261,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  // 🟢 WIDGET ASLI MILIK ANDA UNTUK BARIS INFO (Menggunakan Flexible)
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -308,6 +289,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  // 🟢 WIDGET ASLI MILIK ANDA UNTUK TOMBOL STATUS (Warna lightBlue)
   Widget _buildActionButton(Booking booking) {
     return Text(
       booking.status,

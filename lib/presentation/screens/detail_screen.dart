@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../data/models/movie.dart';
-import '../../data/movie_data.dart';
+import '../../domain/providers/booking_provider.dart';
 import '../../utils/constants.dart';
 import 'seat_screen.dart';
 
-class DetailScreen extends StatefulWidget {
+class DetailScreen extends StatelessWidget {
   final Movie movie;
   const DetailScreen({super.key, required this.movie});
 
   @override
-  State<DetailScreen> createState() => _DetailScreenState();
-}
-
-class _DetailScreenState extends State<DetailScreen> {
-  String selectedCinema = MovieData.cinemas[0];
-  String selectedDate = MovieData.dates[0];
-  String selectedTime = MovieData.times[2];
-
-  @override
   Widget build(BuildContext context) {
+    final bookingProvider = Provider.of<BookingProvider>(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (bookingProvider.activeMovie?.title != movie.title) {
+        bookingProvider.startBooking(movie);
+      }
+    });
+
     final double screenWidth = MediaQuery.of(context).size.width;
-    final bool isWide = screenWidth > 900; // Adjusted for better desktop feel
+    final bool isWide = screenWidth > 900;
     final double horizontalPadding = isWide ? AppConstants.padding : 16.0;
 
     return Scaffold(
@@ -45,13 +45,11 @@ class _DetailScreenState extends State<DetailScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(
-                          width:
-                              380, // Slightly larger for better balance on desktop
-                          child: _buildPosterSection(),
-                        ),
+                        SizedBox(width: 380, child: _buildPosterSection()),
                         const SizedBox(width: 48),
-                        Expanded(child: _buildDetailsSection(isWide)),
+                        Expanded(
+                          child: _buildDetailsSection(isWide, bookingProvider),
+                        ),
                       ],
                     )
                   else
@@ -60,17 +58,16 @@ class _DetailScreenState extends State<DetailScreen> {
                       children: [
                         Center(
                           child: SizedBox(
-                            width:
-                                screenWidth * 0.75, // Impactful but still neat
+                            width: screenWidth * 0.75,
                             child: _buildPosterSection(),
                           ),
                         ),
                         const SizedBox(height: 28),
-                        _buildDetailsSection(isWide),
+                        _buildDetailsSection(isWide, bookingProvider),
                       ],
                     ),
                   const SizedBox(height: 32),
-                  _buildBookButton(),
+                  _buildBookButton(context, bookingProvider),
                 ],
               ),
             ),
@@ -88,7 +85,7 @@ class _DetailScreenState extends State<DetailScreen> {
         child: AspectRatio(
           aspectRatio: 2 / 3,
           child: Image.asset(
-            widget.movie.imagePath,
+            movie.imagePath,
             width: double.infinity,
             fit: BoxFit.cover,
           ),
@@ -96,27 +93,27 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
       const SizedBox(height: 20),
       Text(
-        widget.movie.title,
+        movie.title,
         style: const TextStyle(
           color: Colors.white,
-          fontSize: 22, // Reduced from 26
+          fontSize: 22,
           fontWeight: FontWeight.bold,
           letterSpacing: -0.2,
         ),
       ),
       const SizedBox(height: 4),
       Text(
-        widget.movie.genre,
+        movie.genre,
         style: TextStyle(
           color: Colors.white.withOpacity(0.5),
-          fontSize: 14, // Reduced from 16
+          fontSize: 14,
           fontWeight: FontWeight.w400,
         ),
       ),
     ],
   );
 
-  Widget _buildDetailsSection(bool isWide) => Column(
+  Widget _buildDetailsSection(bool isWide, BookingProvider provider) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _buildBadgesAndPrice(isWide),
@@ -124,7 +121,7 @@ class _DetailScreenState extends State<DetailScreen> {
       _sectionCard(
         title: "Description",
         child: Text(
-          widget.movie.description,
+          movie.description,
           style: const TextStyle(
             color: AppConstants.textSecondary,
             fontSize: 14,
@@ -132,8 +129,14 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
-      _sectionCard(title: "Choose Cinema", child: _buildCinemaDropdown()),
-      _sectionCard(title: "Date & Time", child: _buildDateTimeSelectors()),
+      _sectionCard(
+        title: "Choose Cinema",
+        child: _buildCinemaDropdown(provider),
+      ),
+      _sectionCard(
+        title: "Date & Time",
+        child: _buildDateTimeSelectors(provider),
+      ),
     ],
   );
 
@@ -164,9 +167,9 @@ class _DetailScreenState extends State<DetailScreen> {
           spacing: 8,
           runSpacing: 8,
           children: [
-            _pill(widget.movie.ageRating, Icons.lock),
-            _pill(widget.movie.duration, Icons.access_time),
-            _pill(widget.movie.year, Icons.calendar_today),
+            _pill(movie.ageRating, Icons.lock),
+            _pill(movie.duration, Icons.access_time),
+            _pill(movie.year, Icons.calendar_today),
           ],
         ),
         Container(
@@ -176,7 +179,7 @@ class _DetailScreenState extends State<DetailScreen> {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
-            _formatIDR(widget.movie.price),
+            _formatIDR(movie.price),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
@@ -188,40 +191,35 @@ class _DetailScreenState extends State<DetailScreen> {
     ),
   );
 
-  Widget _buildBookButton() => SizedBox(
-    width: double.infinity,
-    child: ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppConstants.primaryColor,
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      ),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SeatScreen(
-              movie: widget.movie,
-              cinema: selectedCinema,
-              date: selectedDate,
-              time: selectedTime,
-              ticketPrice: widget.movie.price.toInt(),
+  Widget _buildBookButton(BuildContext context, BookingProvider provider) =>
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppConstants.primaryColor,
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30),
             ),
           ),
-        );
-      },
-      child: const Text(
-        "Book Now",
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SeatScreen()),
+            );
+          },
+          child: const Text(
+            "Book Now",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
-  Widget _buildCinemaDropdown() => Container(
+  Widget _buildCinemaDropdown(BookingProvider provider) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16),
     decoration: BoxDecoration(
       color: AppConstants.inputColor,
@@ -232,8 +230,8 @@ class _DetailScreenState extends State<DetailScreen> {
       child: DropdownButton<String>(
         isExpanded: true,
         dropdownColor: AppConstants.cardColor,
-        value: selectedCinema,
-        items: MovieData.cinemas
+        value: provider.selectedCinema,
+        items: provider.cinemas
             .map(
               (e) => DropdownMenuItem(
                 value: e,
@@ -243,7 +241,7 @@ class _DetailScreenState extends State<DetailScreen> {
             .toList(),
         onChanged: (v) {
           if (v != null) {
-            setState(() => selectedCinema = v);
+            provider.selectCinema(v);
           }
         },
         icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
@@ -251,21 +249,21 @@ class _DetailScreenState extends State<DetailScreen> {
     ),
   );
 
-  Widget _buildDateTimeSelectors() => Column(
+  Widget _buildDateTimeSelectors(BookingProvider provider) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _selectHeader("Date"),
       _selectList(
-        MovieData.dates,
-        selectedDate,
-        (v) => setState(() => selectedDate = v),
+        provider.dates,
+        provider.selectedDate,
+        (v) => provider.selectDate(v),
       ),
       const SizedBox(height: 20),
       _selectHeader("Time"),
       _selectList(
-        MovieData.times,
-        selectedTime,
-        (v) => setState(() => selectedTime = v),
+        provider.times,
+        provider.selectedTime,
+        (v) => provider.selectTime(v),
       ),
     ],
   );

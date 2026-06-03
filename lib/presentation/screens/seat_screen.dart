@@ -1,54 +1,23 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../../data/models/movie.dart';
-import '../../data/models/seat.dart';
+import 'package:provider/provider.dart';
+import '../../domain/providers/booking_provider.dart';
 import '../../utils/constants.dart';
-import '../widgets/seat.dart'; // Import layout grid kursi bawaan
-import '../widgets/booking_info.dart'; // Import bottom bar gabungan yang baru
+import '../widgets/seat.dart';
+import '../widgets/booking_info.dart';
 import 'payment_screen.dart';
 
-class SeatScreen extends StatefulWidget {
-  final Movie movie;
-  final int ticketPrice;
-  final String cinema;
-  final String date;
-  final String time;
+// 🟢 SEKARANG BISA MENJADI STATELESSWIDGET (Ringan dan bebas dari penampungan state lokal)
+class SeatScreen extends StatelessWidget {
+  const SeatScreen({super.key});
 
-  const SeatScreen({
-    super.key,
-    required this.movie,
-    this.ticketPrice = AppConstants.defaultTicketPrice,
-    required this.cinema,
-    required this.date,
-    required this.time,
-  });
-
-  @override
-  State<SeatScreen> createState() => _SeatScreenState();
-}
-
-class _SeatScreenState extends State<SeatScreen> {
-  List<Seat> _selectedSeats = [];
-
-  int get _totalPrice => _selectedSeats.length * widget.ticketPrice;
-
-  String get _selectedLabels {
-    final labels = _selectedSeats.map((s) => s.id).toList()..sort();
-    return labels.isEmpty ? '-' : labels.join(', ');
-  }
-
-  void _onBooking() {
+  void _onBooking(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PaymentScreen(
-          movie: widget.movie,
-          cinema: widget.cinema,
-          date: widget.date,
-          time: widget.time,
-          seats: _selectedSeats.map((s) => s.id).toList(),
-          totalPrice: _totalPrice.toDouble(),
-        ),
+        // 🟢 SEKARANG CONSTRUCTOR PAYMENTSCREEN MENJADI SANGAT BERSIH!
+        // PaymentScreen tinggal membaca semua data transaksi dari BookingProvider global.
+        builder: (_) => const PaymentScreen(), 
       ),
     );
   }
@@ -81,6 +50,19 @@ class _SeatScreenState extends State<SeatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 Ambil instance data transaksi aktif dari BookingProvider
+    final bookingProvider = Provider.of<BookingProvider>(context);
+    final movie = bookingProvider.activeMovie;
+
+    if (movie == null) {
+      return Scaffold(
+        backgroundColor: AppConstants.backgroundColor,
+        body: const Center(
+          child: Text('No movie selected', style: TextStyle(color: Colors.white)),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       appBar: AppBar(
@@ -89,12 +71,8 @@ class _SeatScreenState extends State<SeatScreen> {
         toolbarHeight: 80,
         leading: const BackButton(color: Colors.white),
         title: Text(
-          widget.movie.title,
-          style: const TextStyle(
-            color: AppConstants.textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+          movie.title,
+          style: const TextStyle(color: AppConstants.textPrimary, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -110,12 +88,11 @@ class _SeatScreenState extends State<SeatScreen> {
                     children: [
                       const SizedBox(height: 12),
 
-                      // Menampilkan layout layar dan susunan kursi
+                      // Layout susunan kursi bioskop
                       CinemaSeatLayout(
                         onSelectionChanged: (seats) {
-                          setState(() {
-                            _selectedSeats = seats;
-                          });
+                          // 🟢 Kirim daftar kursi terbaru langsung ke provider bisnis Anda
+                          bookingProvider.updateSelectedSeats(seats);
                         },
                       ),
 
@@ -128,13 +105,15 @@ class _SeatScreenState extends State<SeatScreen> {
                 top: false,
                 child: Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  // Cukup panggil satu widget ini, legend sudah otomatis include di dalamnya
                   child: BookingInfo(
-                    totalPrice: _totalPrice,
-                    selectedLabels: _selectedLabels,
+                    // 🟢 SEMUA DATA DIBAWAH INI SEKARANG DIALIRKAN DARI PROVIDER
+                    totalPrice: bookingProvider.totalPrice,
+                    selectedLabels: bookingProvider.selectedLabels,
                     barWidth: _calcSeatGridWidth(context),
                     isDesktopOrWeb: _isDesktopOrWeb,
-                    onBooking: _selectedSeats.isEmpty ? null : _onBooking,
+                    onBooking: bookingProvider.selectedSeats.isEmpty
+                        ? null
+                        : () => _onBooking(context), // 🟢 Fungsi pemicu navigasi bersih
                   ),
                 ),
               ),
