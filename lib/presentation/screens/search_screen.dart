@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../data/models/movie.dart';
-import '../../data/movie_data.dart';
+import 'package:provider/provider.dart';
+import '../../domain/providers/movie_provider.dart';
 import '../../utils/constants.dart';
+import '../../data/models/movie.dart';
 import 'detail_screen.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -13,8 +14,6 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Movie> _filteredMovies = [];
-  bool _isSearching = false;
 
   @override
   void dispose() {
@@ -22,37 +21,11 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  void _onSearchChanged(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _isSearching = false;
-        _filteredMovies = [];
-      });
-      return;
-    }
-
-    final String lowerQuery = query.toLowerCase();
-    final List<Movie> allMovies = [
-      ...MovieData.topMovies,
-      ...MovieData.nowPlaying,
-    ];
-    final List<Movie> movieResults = allMovies
-        .where(
-          (movie) =>
-              movie.title.toLowerCase().contains(lowerQuery) ||
-              movie.genre.toLowerCase().contains(lowerQuery),
-        )
-        .toSet()
-        .toList();
-
-    setState(() {
-      _isSearching = true;
-      _filteredMovies = movieResults;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Membaca state global dari MovieProvider
+    final movieProvider = Provider.of<MovieProvider>(context);
+
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: SafeArea(
@@ -67,10 +40,13 @@ class _SearchScreenState extends State<SearchScreen> {
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(height: 20),
-              _buildSearchInput(),
+              _buildSearchInput(movieProvider),
               const SizedBox(height: 20),
               Expanded(
-                child: _isSearching ? _buildResults() : _buildInitialState(),
+                // 🟢 SEKARANG DATA DIAMBIL LANGSUNG DARI PROVIDER
+                child: movieProvider.isSearching
+                    ? _buildResults(movieProvider)
+                    : _buildInitialState(),
               ),
             ],
           ),
@@ -79,7 +55,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSearchInput() {
+  Widget _buildSearchInput(MovieProvider movieProvider) {
     return Container(
       height: 50,
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -95,7 +71,8 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(
             child: TextField(
               controller: _searchController,
-              onChanged: _onSearchChanged,
+              // 🟢 UI tinggal memicu fungsi bisnis di provider tanpa tahu cara menyaringnya
+              onChanged: (query) => movieProvider.searchMovies(query),
               autofocus: true,
               style: const TextStyle(color: Colors.white, fontSize: 16),
               decoration: InputDecoration(
@@ -114,8 +91,8 @@ class _SearchScreenState extends State<SearchScreen> {
               icon: const Icon(Icons.clear, color: Colors.grey, size: 20),
               onPressed: () {
                 _searchController.clear();
-                _onSearchChanged("");
-                setState(() {});
+                movieProvider
+                    .clearSearch(); // 🟢 Memicu reset state di provider
               },
             ),
         ],
@@ -139,8 +116,11 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildResults() {
-    if (_filteredMovies.isEmpty) {
+  // 🟢 Menerima movieProvider untuk membaca daftar film hasil filter terbaru
+  Widget _buildResults(MovieProvider movieProvider) {
+    final filteredMovies = movieProvider.filteredMovies;
+
+    if (filteredMovies.isEmpty) {
       return const Center(
         child: Text("No results found", style: TextStyle(color: Colors.grey)),
       );
@@ -181,9 +161,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 mainAxisSpacing: 12,
                 childAspectRatio: cardRatio,
               ),
-              itemCount: _filteredMovies.length,
+              itemCount: filteredMovies.length,
               itemBuilder: (context, index) {
-                return _buildMovieCard(_filteredMovies[index]);
+                return _buildMovieCard(filteredMovies[index]);
               },
             );
           },
