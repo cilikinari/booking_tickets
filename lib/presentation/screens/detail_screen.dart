@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import '../../data/models/movie.dart';
 import '../../domain/providers/booking_provider.dart';
 import '../../utils/constants.dart';
-import 'seat_screen.dart';
+import '../widgets/detail_poster.dart';
+import '../widgets/detail_info.dart';
+import '../widgets/detail_selection.dart';
+import '../widgets/book_button.dart';
 
 class DetailScreen extends StatelessWidget {
   final Movie movie;
@@ -37,18 +40,25 @@ class DetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const BackButton(
-                    color: Colors.white,
-                  ), // Menggunakan bawaan Flutter dengan warna putih
+                  const BackButton(color: Colors.white),
                   const SizedBox(height: 16),
+
+                  // Layout Responsive
                   if (isWide)
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SizedBox(width: 380, child: _buildPosterSection()),
+                        SizedBox(width: 380, child: MoviePoster(movie: movie)),
                         const SizedBox(width: 48),
                         Expanded(
-                          child: _buildDetailsSection(isWide, bookingProvider),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              MovieInfoAndDescription(movie: movie),
+                              const SizedBox(height: 16),
+                              BookingSelection(provider: bookingProvider),
+                            ],
+                          ),
                         ),
                       ],
                     )
@@ -59,15 +69,18 @@ class DetailScreen extends StatelessWidget {
                         Center(
                           child: SizedBox(
                             width: screenWidth * 0.75,
-                            child: _buildPosterSection(),
+                            child: MoviePoster(movie: movie),
                           ),
                         ),
                         const SizedBox(height: 28),
-                        _buildDetailsSection(isWide, bookingProvider),
+                        MovieInfoAndDescription(movie: movie),
+                        const SizedBox(height: 16),
+                        BookingSelection(provider: bookingProvider),
                       ],
                     ),
+
                   const SizedBox(height: 32),
-                  _buildBookButton(context, bookingProvider),
+                  const BookButton(),
                 ],
               ),
             ),
@@ -76,291 +89,4 @@ class DetailScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildPosterSection() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        child: AspectRatio(
-          aspectRatio: 2 / 3,
-          child: Image.asset(
-            movie.imagePath,
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
-      const SizedBox(height: 20),
-      Text(
-        movie.title,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.2,
-        ),
-      ),
-      const SizedBox(height: 4),
-      Text(
-        movie.genre,
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.5),
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-    ],
-  );
-
-  Widget _buildDetailsSection(bool isWide, BookingProvider provider) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _buildBadgesAndPrice(isWide),
-      const SizedBox(height: 20),
-      _sectionCard(
-        title: "Description",
-        child: Text(
-          movie.description,
-          style: const TextStyle(
-            color: AppConstants.textSecondary,
-            fontSize: 14,
-            height: 1.5,
-          ),
-        ),
-      ),
-      _sectionCard(
-        title: "Choose Cinema",
-        child: _buildCinemaDropdown(provider),
-      ),
-      _sectionCard(
-        title: "Date & Time",
-        child: _buildDateTimeSelectors(provider),
-      ),
-    ],
-  );
-
-  String _formatIDR(double amount) {
-    String price = amount.toInt().toString();
-    String formatted = "";
-    int count = 0;
-    for (int i = price.length - 1; i >= 0; i--) {
-      formatted = price[i] + formatted;
-      count++;
-      if (count == 3 && i != 0) {
-        formatted = "." + formatted;
-        count = 0;
-      }
-    }
-    return "Rp$formatted";
-  }
-
-  Widget _buildBadgesAndPrice(bool isWide) => SizedBox(
-    width: double.infinity,
-    child: Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      spacing: 12,
-      runSpacing: 12,
-      children: [
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            _pill(movie.ageRating, Icons.lock),
-            _pill(movie.duration, Icons.access_time),
-            _pill(movie.year, Icons.calendar_today),
-          ],
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppConstants.primaryColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            _formatIDR(movie.price),
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _buildBookButton(BuildContext context, BookingProvider provider) =>
-      SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppConstants.primaryColor,
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-          ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SeatScreen()),
-            );
-          },
-          child: const Text(
-            "Book Now",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      );
-
-  Widget _buildCinemaDropdown(BookingProvider provider) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    decoration: BoxDecoration(
-      color: AppConstants.inputColor,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.white10),
-    ),
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        isExpanded: true,
-        dropdownColor: AppConstants.cardColor,
-        value: provider.selectedCinema,
-        items: provider.cinemas
-            .map(
-              (e) => DropdownMenuItem(
-                value: e,
-                child: Text(e, style: const TextStyle(color: Colors.white)),
-              ),
-            )
-            .toList(),
-        onChanged: (v) {
-          if (v != null) {
-            provider.selectCinema(v);
-          }
-        },
-        icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
-      ),
-    ),
-  );
-
-  Widget _buildDateTimeSelectors(BookingProvider provider) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _selectHeader("Date"),
-      _selectList(
-        provider.dates,
-        provider.selectedDate,
-        (v) => provider.selectDate(v),
-      ),
-      const SizedBox(height: 20),
-      _selectHeader("Time"),
-      _selectList(
-        provider.times,
-        provider.selectedTime,
-        (v) => provider.selectTime(v),
-      ),
-    ],
-  );
-
-  Widget _selectHeader(String t) => Padding(
-    padding: const EdgeInsets.only(bottom: 12),
-    child: Text(
-      t,
-      style: const TextStyle(
-        color: AppConstants.textSecondary,
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  );
-
-  Widget _selectList(List<String> items, String sel, Function(String) onSel) =>
-      Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: items.map((i) {
-          final isSel = i == sel;
-          return GestureDetector(
-            onTap: () => onSel(i),
-            child: AnimatedContainer(
-              duration: AppConstants.fastAnimation,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: isSel
-                    ? AppConstants.primaryColor
-                    : AppConstants.inputColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isSel ? Colors.transparent : Colors.white10,
-                ),
-              ),
-              child: Text(
-                i,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      );
-
-  Widget _sectionCard({required String title, required Widget child}) =>
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        margin: const EdgeInsets.only(bottom: 16),
-        decoration: BoxDecoration(
-          color: AppConstants.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
-      );
-
-  Widget _pill(String t, IconData i) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    decoration: BoxDecoration(
-      color: AppConstants.inputColor,
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: Colors.white10),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(i, color: AppConstants.textSecondary, size: 14),
-        const SizedBox(width: 8),
-        Text(
-          t,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
-  );
 }
