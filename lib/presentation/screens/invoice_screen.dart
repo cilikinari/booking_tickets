@@ -52,10 +52,10 @@ class InvoiceScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         _TicketHeader(booking: booking),
-                        const _TicketDashedDivider(), 
+                        const _TicketDashedDivider(),
                         _TicketDetails(booking: booking),
                         // 🟢 Digabungkan dengan widget asli milik Anda di bawah
-                        _TicketFooter(totalPrice: booking.totalPrice), 
+                        _TicketFooter(totalPrice: booking.totalPrice),
                       ],
                     ),
                   ),
@@ -84,7 +84,10 @@ class InvoiceScreen extends StatelessWidget {
         ),
         onPressed: () {
           // 🟢 AMANKAN DATA: Kirim data tiket sukses ini ke dalam daftar riwayat global sebelum pulang ke home
-          Provider.of<HistoryProvider>(context, listen: false).addBookingToHistory(booking);
+          Provider.of<HistoryProvider>(
+            context,
+            listen: false,
+          ).addBookingToHistory(booking);
 
           // Kembali ke HomeScreen dengan bersih
           Navigator.of(context).popUntil((route) => route.isFirst);
@@ -228,8 +231,6 @@ class _TicketDetails extends StatelessWidget {
               _buildInfoItem('Order ID', '#CM-98231A', CrossAxisAlignment.end),
             ],
           ),
-          const SizedBox(height: 32),
-          _buildQrCode(),
         ],
       ),
     );
@@ -268,26 +269,6 @@ class _TicketDetails extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildQrCode() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12, width: 1),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.qr_code_2, size: 100, color: Colors.black87),
-          const SizedBox(height: 4),
-          Text(
-            'Scan at counter',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // 🟢 WIDGET ASLI MILIK ANDA (Sekarang sudah tergabung sempurna tanpa terpotong)
@@ -318,7 +299,7 @@ class _TicketFooter extends StatelessWidget {
             ),
           ),
           Text(
-            'Rp ${AppHelpers.formatNumber(totalPrice)}', 
+            'Rp ${AppHelpers.formatNumber(totalPrice)}',
             style: const TextStyle(
               color: Colors.black87,
               fontWeight: FontWeight.w900,

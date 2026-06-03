@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../data/models/seat.dart';
+import '../../data/seat_data.dart';
 import '../../utils/constants.dart';
 import 'seat_item.dart';
 
 class CinemaSeatLayout extends StatefulWidget {
   final ValueChanged<List<Seat>> onSelectionChanged;
 
-  const CinemaSeatLayout({
-    super.key,
-    required this.onSelectionChanged,
-  });
+  const CinemaSeatLayout({super.key, required this.onSelectionChanged});
 
   @override
   State<CinemaSeatLayout> createState() => _CinemaSeatLayoutState();
@@ -18,44 +16,10 @@ class CinemaSeatLayout extends StatefulWidget {
 class _CinemaSeatLayoutState extends State<CinemaSeatLayout> {
   late List<List<Seat?>> _rows;
 
-  // Data kursi pindah ke sini
-  static const _bookedIds = {
-    'A1', 'A2', 'A5', 'A6', 'A7',
-    'B2', 'B3', 'B8', 'B9', 'B10',
-    'C4', 'C5', 'C9',
-    'D1', 'D4', 'D5', 'D9', 'D10',
-    'E3', 'E6',
-  };
-
   @override
   void initState() {
     super.initState();
-    _rows = _generateRows();
-  }
-
-  List<List<Seat?>> _generateRows() {
-    const rowLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const totalCols = 10;
-    const aisleAfter = 4;
-
-    return rowLetters.map((row) {
-      final cols = <Seat?>[];
-      for (int col = 1; col <= totalCols; col++) {
-        if (col == aisleAfter + 1) cols.add(null);
-        final id = '$row$col';
-        cols.add(
-          Seat(
-            id: id,
-            row: row,
-            number: col,
-            status: _bookedIds.contains(id)
-                ? SeatStatus.booked
-                : SeatStatus.available,
-          ),
-        );
-      }
-      return cols;
-    }).toList();
+    _rows = SeatData.generateRows();
   }
 
   void _toggleSeat(int rowIdx, int colIdx) {
@@ -76,7 +40,7 @@ class _CinemaSeatLayoutState extends State<CinemaSeatLayout> {
         .whereType<Seat>()
         .where((s) => s.status == SeatStatus.selected)
         .toList();
-        
+
     widget.onSelectionChanged(selectedSeats);
   }
 
