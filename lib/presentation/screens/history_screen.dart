@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../models/booking.dart';
-import '../models/movie.dart';
+import '../../data/models/booking.dart';
+import '../../data/models/movie.dart';
 import '../widgets/bottom_nav.dart';
-import '../utils/constants.dart';
-import '../data/movie_data.dart';
-import '../utils/helpers.dart'; // Import helper global
+import '../../utils/constants.dart';
+import '../../data/movie_data.dart';
+import '../../utils/helpers.dart'; // Import helper global
 import 'home_screen.dart';
 import 'profile_screen.dart';
 

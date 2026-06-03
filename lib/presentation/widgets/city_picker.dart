@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../data/city_data.dart';
-import '../utils/constants.dart';
+import '../../data/city_data.dart';
+import '../../utils/constants.dart';
 
 class CityPickerDialog extends StatefulWidget {
   final String currentCity;

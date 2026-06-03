@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 // ignore: unused_import
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
-import 'screens/home_unauth_screen.dart';
+import 'presentation/screens/home_unauth_screen.dart';
 
 void main() {
   runApp(const MyApp());

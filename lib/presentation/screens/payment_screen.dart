@@ -1,10 +1,10 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/movie.dart';
-import '../models/booking.dart';
-import '../utils/constants.dart';
-import '../utils/helpers.dart'; // Import helper global
+import '../../data/models/movie.dart';
+import '../../data/models/booking.dart';
+import '../../utils/constants.dart';
+import '../../utils/helpers.dart'; // Import helper global
 import '../widgets/countdown_banner.dart';
 import '../widgets/order_summary.dart';
 import '../widgets/payment_method.dart';

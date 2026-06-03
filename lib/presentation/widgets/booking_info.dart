@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
-import '../utils/helpers.dart'; // 1. Import helper global di sini
+import '../../utils/constants.dart';
+import '../../utils/helpers.dart'; // 1. Import helper global di sini
 
 class BookingInfo extends StatelessWidget {
   final int totalPrice;

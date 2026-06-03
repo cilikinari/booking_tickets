@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../data/movie_data.dart';
-import '../utils/constants.dart';
+import '../../data/movie_data.dart';
+import '../../utils/constants.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart'; // <-- Import AppFooter

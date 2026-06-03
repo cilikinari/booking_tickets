@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import '../models/movie.dart';
-import '../models/seat.dart';
-import '../utils/constants.dart';
+import '../../data/models/movie.dart';
+import '../../data/models/seat.dart';
+import '../../utils/constants.dart';
 import '../widgets/seat.dart'; // Import layout grid kursi bawaan
 import '../widgets/booking_info.dart'; // Import bottom bar gabungan yang baru
 import 'payment_screen.dart';

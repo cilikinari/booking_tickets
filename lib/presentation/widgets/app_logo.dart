@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import '../../utils/constants.dart';
 
 class AppLogo extends StatelessWidget {
   final double fontSize;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../models/movie.dart';
-import '../data/movie_data.dart';
-import '../utils/constants.dart';
-import '../screens/seat_screen.dart';
+import '../../data/models/movie.dart';
+import '../../data/movie_data.dart';
+import '../../utils/constants.dart';
+import 'seat_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final Movie movie;

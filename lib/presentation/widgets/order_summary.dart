@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/movie.dart';
-import '../utils/constants.dart';
-import '../utils/helpers.dart';
+import '../../data/models/movie.dart';
+import '../../utils/constants.dart';
+import '../../utils/helpers.dart';
 
 class OrderSummaryCard extends StatelessWidget {
   final Movie movie;

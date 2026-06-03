@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/seat.dart';
-import '../utils/constants.dart';
+import '../../data/models/seat.dart';
+import '../../utils/constants.dart';
 
 class SeatItem extends StatelessWidget {
   final Seat seat;

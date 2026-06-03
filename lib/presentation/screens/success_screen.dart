@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/booking.dart';
-import '../utils/constants.dart';
+import '../../data/models/booking.dart';
+import '../../utils/constants.dart';
 import 'invoice_screen.dart';
 
 const double _successScreenMaxWidth = 420;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../data/movie_data.dart';
-import '../utils/constants.dart';
+import '../../data/movie_data.dart';
+import '../../utils/constants.dart';
 import 'detail_screen.dart';
 import 'search_screen.dart';
 import 'history_screen.dart';
@@ -10,7 +10,7 @@ import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart'; // <-- Tambahkan import ini
 import '../widgets/city_picker.dart';
-import '../data/city_data.dart';
+import '../../data/city_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

@@ -1,4 +1,4 @@
-import '../models/movie.dart';
+import 'models/movie.dart';
 
 class MovieData {
   static final List<Movie> topMovies = [

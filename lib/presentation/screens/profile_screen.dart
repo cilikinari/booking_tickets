@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
+import '../../utils/constants.dart';
 import '../widgets/bottom_nav.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';

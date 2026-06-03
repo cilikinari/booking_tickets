@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/seat.dart';
-import '../utils/constants.dart';
+import '../../data/models/seat.dart';
+import '../../utils/constants.dart';
 import 'seat_item.dart';
 
 class CinemaSeatLayout extends StatefulWidget {

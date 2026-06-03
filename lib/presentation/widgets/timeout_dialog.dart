@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../utils/constants.dart';
+import '../../utils/constants.dart';
 
 class TimeoutDialog extends StatelessWidget {
   final VoidCallback onGotIt;

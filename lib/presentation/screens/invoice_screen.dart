@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/booking.dart';
-import '../utils/constants.dart';
-import '../utils/helpers.dart'; // Import helper global
+import '../../data/models/booking.dart';
+import '../../utils/constants.dart';
+import '../../utils/helpers.dart'; // Import helper global
 
 class InvoiceScreen extends StatelessWidget {
   final Booking booking;
