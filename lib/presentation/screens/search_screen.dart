@@ -183,14 +183,31 @@ class _SearchScreenState extends State<SearchScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           AspectRatio(
-            aspectRatio: 0.8,
+            aspectRatio: 2 / 3, // Mengunci rasio standar poster biar rapi
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                movie.imagePath,
-                fit: BoxFit.cover,
-                width: double.infinity,
-              ),
+              child: movie.posterUrl.isNotEmpty
+                  ? Image.network(
+                      // 🟢 DISAMAKAN: Ikuti logika screen yang berhasil tanpa modifikasi ribet
+                      movie.posterUrl.startsWith('http')
+                          ? movie.posterUrl
+                          : 'http://localhost:3000/${movie.posterUrl}',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[800],
+                          child: const Icon(
+                            Icons.broken_image,
+                            color: Colors.red,
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
+                      color: Colors.grey[800],
+                      child: const Icon(Icons.movie, color: Colors.grey),
+                    ),
             ),
           ),
           const SizedBox(height: 6),
@@ -206,8 +223,10 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           const SizedBox(height: 1),
           Text(
-            movie.genre,
+            movie.genres.map((g) => g.name).join(', '),
             style: const TextStyle(color: Colors.grey, fontSize: 11),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),

@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../domain/providers/booking_provider.dart';
 import '../../utils/constants.dart';
 
 class BookingSelection extends StatelessWidget {
-  final BookingProvider provider;
+  final BookingProvider provider; // Tetap biarkan parameter ini agar tidak error di DetailScreen
 
   const BookingSelection({super.key, required this.provider});
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 MENGGUNAKAN WATCH AGAR UI MERESPON SAAT DATA API GOLANG MASUK
+    final bookingWatch = context.watch<BookingProvider>();
+
+    // Handling jika data di database kosong / tidak ada jadwal untuk film ini
+    final List<String> cinemaList = bookingWatch.cinemas;
+    final List<String> dateList = bookingWatch.dates;
+    final List<String> timeList = bookingWatch.times;
+
     return Column(
       children: [
-        // Choose Cinema
+        // ==========================================
+        // CHOOSE CINEMA DROPDOWN
+        // ==========================================
         _buildSectionCard(
           title: "Choose Cinema",
           child: Container(
@@ -25,18 +36,26 @@ class BookingSelection extends StatelessWidget {
               child: DropdownButton<String>(
                 isExpanded: true,
                 dropdownColor: AppConstants.cardColor,
-                value: provider.selectedCinema,
-                items: provider.cinemas
-                    .map(
-                      (e) => DropdownMenuItem(
-                        value: e,
-                        child: Text(e, style: const TextStyle(color: Colors.white)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) provider.selectCinema(v);
-                },
+                // 🟢 Jika data dari API kosong, value di-set ke text bantuan bawaan UI
+                value: bookingWatch.selectedCinema.isNotEmpty ? bookingWatch.selectedCinema : "placeholder_cinema",
+                items: cinemaList.isEmpty
+                    ? [
+                        const DropdownMenuItem(
+                          value: "placeholder_cinema",
+                          child: Text("Pilih Bioskop", style: TextStyle(color: Colors.white54)),
+                        )
+                      ]
+                    : cinemaList.map((e) {
+                        return DropdownMenuItem(
+                          value: e,
+                          child: Text(e, style: const TextStyle(color: Colors.white)),
+                        );
+                      }).toList(),
+                onChanged: cinemaList.isEmpty
+                    ? null // Dropdown mati/disable kalau data API kosong
+                    : (v) {
+                        if (v != null) bookingWatch.selectCinema(v);
+                      },
                 icon: const Icon(Icons.keyboard_arrow_down, color: Colors.white),
               ),
             ),
@@ -44,25 +63,33 @@ class BookingSelection extends StatelessWidget {
         ),
         const SizedBox(height: 16),
 
-        // Date & Time
+        // ==========================================
+        // DATE & TIME SELECTION
+        // ==========================================
         _buildSectionCard(
           title: "Date & Time",
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildSelectHeader("Date"),
-              _buildSelectList(
-                provider.dates,
-                provider.selectedDate,
-                (v) => provider.selectDate(v),
-              ),
+              // 🟢 Tampilkan tombol tanggal jika ada, atau teks bantuan jika kosong
+              dateList.isEmpty
+                  ? const Text("Pilih Studio/Bioskop terlebih dahulu", style: TextStyle(color: Colors.white30, fontSize: 14))
+                  : _buildSelectList(
+                      dateList,
+                      bookingWatch.selectedDate,
+                      (v) => bookingWatch.selectDate(v),
+                    ),
               const SizedBox(height: 20),
               _buildSelectHeader("Time"),
-              _buildSelectList(
-                provider.times,
-                provider.selectedTime,
-                (v) => provider.selectTime(v),
-              ),
+              // 🟢 Tampilkan tombol jam jika ada, atau teks bantuan jika kosong
+              timeList.isEmpty
+                  ? const Text("Pilih Tanggal terlebih dahulu", style: TextStyle(color: Colors.white30, fontSize: 14))
+                  : _buildSelectList(
+                      timeList,
+                      bookingWatch.selectedTime,
+                      (v) => bookingWatch.selectTime(v),
+                    ),
             ],
           ),
         ),

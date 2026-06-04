@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../data/models/movie.dart';
 import '../../utils/constants.dart';
-import '../../utils/helpers.dart'; // Sesuaikan path ini dengan lokasi file AppHelpers kamu
+import '../../utils/helpers.dart';
+import '../../domain/providers/booking_provider.dart'; 
 
 class MovieInfoAndDescription extends StatelessWidget {
   final Movie movie;
@@ -26,9 +28,9 @@ class MovieInfoAndDescription extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _buildPill(movie.ageRating, Icons.lock),
-                  _buildPill(movie.duration, Icons.access_time),
-                  _buildPill(movie.year, Icons.calendar_today),
+                  _buildPill(movie.ageRating.toString(), Icons.lock),
+                  _buildPill("${movie.duration} Min", Icons.access_time),
+                  _buildPill(movie.releaseYear.toString(), Icons.calendar_today),
                 ],
               ),
               Container(
@@ -40,8 +42,9 @@ class MovieInfoAndDescription extends StatelessWidget {
                   color: AppConstants.primaryColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
+                // 🟢 HARGA SEKARANG DINAMIS DARI JADWAL YANG DIPILIH
                 child: Text(
-                  "Rp${AppHelpers.formatNumber(movie.price)}", // 🟢 Memanggil fungsi format angka dengan tambahan Rp
+                  "Rp ${AppHelpers.formatNumber(context.watch<BookingProvider>().ticketPrice)}", 
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -58,7 +61,7 @@ class MovieInfoAndDescription extends StatelessWidget {
         _buildSectionCard(
           title: "Description",
           child: Text(
-            movie.description,
+            movie.synopsis,
             style: const TextStyle(
               color: AppConstants.textSecondary,
               fontSize: 14,

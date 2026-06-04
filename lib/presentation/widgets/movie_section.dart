@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../data/models/movie.dart';
+import '../../data/models/movie.dart'; // Sesuaikan path jika berbeda
 
 class MovieSection extends StatelessWidget {
-  final String title; // Tambahkan parameter title
+  final String title;
   final List<Movie> movies;
   final bool isWide;
   final Function(Movie)? onMovieTap;
 
   const MovieSection({
     super.key,
-    required this.title, // Wajib diisi saat memanggil
+    required this.title,
     required this.movies,
     required this.isWide,
     this.onMovieTap,
@@ -20,7 +20,6 @@ class MovieSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Judul section yang dipindahkan dari HomeScreen
         Text(
           title,
           style: const TextStyle(
@@ -29,7 +28,7 @@ class MovieSection extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12), // Jarak antara judul dan list film
+        const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -75,12 +74,32 @@ class MovieCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: Image.asset(
-              movie.imagePath,
-              fit: BoxFit.cover,
-              height: isWide ? 200 : 220,
-              width: isWide ? 350 : 150,
-            ),
+            child: movie.posterUrl.isNotEmpty
+                ? Image.network(
+                    movie.posterUrl.startsWith('http')
+                        ? movie.posterUrl
+                        : 'http://localhost:3000/${movie.posterUrl}',
+                    fit: BoxFit.cover,
+                    height: isWide ? 200 : 220,
+                    width: isWide ? 350 : 150,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: isWide ? 200 : 220,
+                        width: isWide ? 350 : 150,
+                        color: Colors.grey[800],
+                        child: const Icon(
+                          Icons.broken_image,
+                          color: Colors.red,
+                        ),
+                      );
+                    },
+                  )
+                : Container(
+                    height: isWide ? 200 : 220,
+                    width: isWide ? 350 : 150,
+                    color: Colors.grey[800],
+                    child: const Icon(Icons.image, color: Colors.amber),
+                  ),
           ),
           const SizedBox(height: 12),
           SizedBox(
@@ -105,8 +124,11 @@ class MovieCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
+                // 🟢 PENGAMAN GENRE ADA DI SINI
                 Text(
-                  "${isWide ? '2025' : '2026'} • ${movie.genre}",
+                  "${movie.releaseYear} • ${movie.genres.isEmpty ? 'No Genre' : movie.genres.map((g) => g.name).join(', ')}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
               ],

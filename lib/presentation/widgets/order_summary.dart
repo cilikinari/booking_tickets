@@ -36,8 +36,8 @@ class OrderSummaryCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              movie.imagePath,
+            child: Image.network(
+              movie.posterUrl,
               width: posterWidth,
               height: posterHeight,
               fit: BoxFit.cover,
@@ -58,7 +58,7 @@ class OrderSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  movie.genre,
+                  movie.genres.isNotEmpty ? movie.genres.map((g) => g.name).join(', ') : 'No Genre',
                   style: const TextStyle(
                     color: AppConstants.textMuted,
                     fontSize: 12,

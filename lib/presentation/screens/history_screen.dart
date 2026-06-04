@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // 🟢 Tambahkan import Provider
+import 'package:provider/provider.dart'; 
 import '../../data/models/booking.dart';
 import '../../data/models/movie.dart';
-import '../../domain/providers/history_provider.dart'; // 🟢 Tambahkan import HistoryProvider
-import '../../domain/providers/movie_provider.dart'; // 🟢 Tambahkan import MovieProvider untuk mencari poster
+import '../../domain/providers/history_provider.dart'; 
+import '../../domain/providers/movie_provider.dart'; 
 import '../widgets/bottom_nav.dart';
 import '../../utils/constants.dart';
-import '../../utils/helpers.dart'; // Import helper global
+import '../../utils/helpers.dart'; 
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
-// 🟢 Diubah menjadi StatelessWidget karena data riwayat dibaca dari provider global arsitektur baru Anda
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   Movie? _getMovieByTitle(String title, MovieProvider movieProvider) {
     try {
+      // 🟢 Pastikan menyisir variabel topMovies dan nowPlaying yang baru dari API
       final allMovies = [
         ...movieProvider.topMovies,
         ...movieProvider.nowPlaying,
@@ -28,7 +28,6 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🟢 Ambil state riwayat dan katalog film dari jembatan Provider pusat
     final historyProvider = Provider.of<HistoryProvider>(context);
     final movieProvider = Provider.of<MovieProvider>(context);
 
@@ -112,7 +111,6 @@ class HistoryScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               ...bookings.map((booking) {
-                                // 🟢 Cari data poster film langsung dari MovieProvider arsitektur baru Anda
                                 final movie = _getMovieByTitle(
                                   booking.movieTitle,
                                   movieProvider,
@@ -192,14 +190,23 @@ class HistoryScreen extends StatelessWidget {
   }
 
   Widget _buildPoster(Movie? movie, double w, double h) {
-    if (movie != null) {
+    // 🟢 UBAH JADI IMAGE.NETWORK: Mengambil link poster dari database backend
+    if (movie != null && movie.posterUrl.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.asset(
-          movie.imagePath,
+        child: Image.network(
+          movie.posterUrl,
           width: w,
           height: h,
           fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: w,
+              height: h,
+              color: Colors.white.withOpacity(0.1),
+              child: const Icon(Icons.broken_image, color: Colors.grey),
+            );
+          },
         ),
       );
     }
@@ -210,10 +217,10 @@ class HistoryScreen extends StatelessWidget {
         color: Colors.white.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
+      child: const Icon(Icons.movie, color: Colors.grey),
     );
   }
 
-  // 🟢 WIDGET ASLI MILIK ANDA UNTUK INFO FILM
   Widget _buildMovieInfo(Booking booking, Movie? movie) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,8 +235,9 @@ class HistoryScreen extends StatelessWidget {
         ),
         if (movie != null) ...[
           const SizedBox(height: 4),
+          // 🟢 UBAH DATA GENRE: Sesuai dengan format list genre milik API baru
           Text(
-            movie.genre,
+            movie.genres.map((g) => g.name).join(', '),
             style: TextStyle(
               color: Colors.white.withOpacity(0.6),
               fontSize: 13,
@@ -261,7 +269,6 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  // 🟢 WIDGET ASLI MILIK ANDA UNTUK BARIS INFO (Menggunakan Flexible)
   Widget _infoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
@@ -289,7 +296,6 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  // 🟢 WIDGET ASLI MILIK ANDA UNTUK TOMBOL STATUS (Warna lightBlue)
   Widget _buildActionButton(Booking booking) {
     return Text(
       booking.status,

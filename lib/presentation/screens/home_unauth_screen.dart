@@ -8,13 +8,26 @@ import '../widgets/app_footer.dart';
 import 'login_screen.dart';
 import 'register.dart';
 
-class HomeUnauthScreen extends StatelessWidget {
+// 1. 🟢 DIUBAH JADI STATEFULWIDGET: Supaya bisa panggil API pas pertama kali web dimuat
+class HomeUnauthScreen extends StatefulWidget {
   const HomeUnauthScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final movieProvider = Provider.of<MovieProvider>(context);
+  State<HomeUnauthScreen> createState() => _HomeUnauthScreenState();
+}
 
+class _HomeUnauthScreenState extends State<HomeUnauthScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 2. 🟢 PEMICU API: Tembak backend Go-Fiber tepat setelah frame halaman siap
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MovieProvider>(context, listen: false).fetchHomeData();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: SafeArea(
@@ -23,38 +36,88 @@ class HomeUnauthScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppConstants.padding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(context),
-                  const SizedBox(height: 24),
+              // 3. 🟢 GUNAKAN CONSUMER: Untuk mendengarkan perubahan state loading/error/sukses
+              child: Consumer<MovieProvider>(
+                builder: (context, movieProvider, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context),
+                      const SizedBox(height: 24),
 
-                  // Section Top Movies
-                  MovieSection(
-                    title: "Top Movies",
-                    movies: movieProvider.topMovies, // 🟢 Diambil dari Provider
-                    isWide: true,
-                    onMovieTap: null,
-                  ),
+                      // =========================================================
+                      // KONDISI 1: JIKA LAGI LOADING AMBIL DATA DARI GOLANG
+                      // =========================================================
+                      if (movieProvider.isLoading)
+                        const SizedBox(
+                          height: 350,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppConstants.primaryColor),
+                            ),
+                          ),
+                        )
+                      
+                      // =========================================================
+                      // KONDISI 2: JIKA KONEKSI INTERNET ERROR / BACKEND MATI
+                      // =========================================================
+                      else if (movieProvider.errorMessage.isNotEmpty)
+                        SizedBox(
+                          height: 350,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.wifi_off, size: 60, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                Text(
+                                  movieProvider.errorMessage,
+                                  style: const TextStyle(color: Colors.red, fontSize: 15),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor),
+                                  onPressed: () => movieProvider.fetchHomeData(),
+                                  child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
 
-                  const SizedBox(height: 24),
+                      // =========================================================
+                      // KONDISI 3: SUKSES (Tampilkan widget MovieSection aslimu)
+                      // =========================================================
+                      else ...[
+                        // Section Top Movies
+                        MovieSection(
+                          title: "Top Movies",
+                          movies: movieProvider.topMovies, 
+                          isWide: true,
+                          onMovieTap: null,
+                        ),
 
-                  // Section Now Showing
-                  MovieSection(
-                    title: "Now Showing",
-                    movies:
-                        movieProvider.nowPlaying, // 🟢 Diambil dari Provider
-                    isWide: false,
-                    onMovieTap: null,
-                  ),
+                        const SizedBox(height: 24),
 
-                  const SizedBox(height: 80),
+                        // Section Now Showing
+                        MovieSection(
+                          title: "Now Showing",
+                          movies: movieProvider.nowPlaying, 
+                          isWide: false,
+                          onMovieTap: null,
+                        ),
+                      ],
 
-                  // Panggil widget AppFooter di sini
-                  const AppFooter(),
+                      const SizedBox(height: 80),
 
-                  const SizedBox(height: 20),
-                ],
+                      // Panggil widget AppFooter di sini
+                      const AppFooter(),
+
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                },
               ),
             ),
           ),

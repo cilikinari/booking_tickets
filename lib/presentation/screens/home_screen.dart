@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/movie.dart';
 import '../../domain/providers/movie_provider.dart';
-import '../../domain/providers/location_provider.dart'; // 🟢 Tambahkan import LocationProvider
+import '../../domain/providers/location_provider.dart'; 
 import '../../utils/constants.dart';
 import 'detail_screen.dart';
 import 'search_screen.dart';
@@ -14,22 +14,34 @@ import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart';
 import '../widgets/city_picker.dart';
 
-// 🟢 Diubah menjadi StatelessWidget karena tidak ada State lokal lagi
-class HomeScreen extends StatelessWidget {
+// 1. 🟢 DIUBAH JADI STATEFULWIDGET: Supaya bisa nembak API pas halaman diakses
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 2. 🟢 PEMICU API: Ambil data film teranyar dari backend Go-Fiber
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<MovieProvider>(context, listen: false).fetchHomeData();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // 🟢 Mengambil data film dan lokasi dari Provider pusat
-    final movieProvider = Provider.of<MovieProvider>(context);
+    // Listener untuk lokasi tetap di root build method
     final locationProvider = Provider.of<LocationProvider>(context);
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       bottomNavigationBar: CustomBottomNav(
         currentIndex: 0,
-        onTap: (index) =>
-            _onBottomNavTap(context, index), // 🟢 Dipisah ke fungsi helper
+        onTap: (index) => _onBottomNavTap(context, index), 
       ),
       body: SafeArea(
         child: Center(
@@ -37,39 +49,87 @@ class HomeScreen extends StatelessWidget {
             constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppConstants.padding),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(
-                    context,
-                    locationProvider,
-                  ), // 🟢 Oper provider lokasi ke header
-                  const SizedBox(height: 16),
-                  _buildSearchBar(context),
-                  const SizedBox(height: 24),
+              // 3. 🟢 BUNGKUS DENGAN CONSUMER: Menangani state loading/error film secara reaktif
+              child: Consumer<MovieProvider>(
+                builder: (context, movieProvider, child) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(context, locationProvider), 
+                      const SizedBox(height: 16),
+                      _buildSearchBar(context),
+                      const SizedBox(height: 24),
 
-                  // Section Top Movies
-                  MovieSection(
-                    title: "Top Movies",
-                    movies: movieProvider.topMovies,
-                    isWide: true,
-                    onMovieTap: (movie) => _navigateToDetail(context, movie),
-                  ),
+                      // =========================================================
+                      // KONDISI 1: JIKA SEAT / FILM SEDANG DI-DOWNLOAD
+                      // =========================================================
+                      if (movieProvider.isLoading)
+                        const SizedBox(
+                          height: 350,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(AppConstants.primaryColor),
+                            ),
+                          ),
+                        )
 
-                  const SizedBox(height: 24),
+                      // =========================================================
+                      // KONDISI 2: JIKA BACKEND GO-FIBER DOWN / OFFLINE
+                      // =========================================================
+                      else if (movieProvider.errorMessage.isNotEmpty)
+                        SizedBox(
+                          height: 350,
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.cloud_off, size: 60, color: Colors.grey),
+                                const SizedBox(height: 16),
+                                Text(
+                                  movieProvider.errorMessage,
+                                  style: const TextStyle(color: Colors.red, fontSize: 14),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor),
+                                  onPressed: () => movieProvider.fetchHomeData(),
+                                  child: const Text('Coba Lagi', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
 
-                  // Section Now Showing
-                  MovieSection(
-                    title: "Now Showing",
-                    movies: movieProvider.nowPlaying,
-                    isWide: false,
-                    onMovieTap: (movie) => _navigateToDetail(context, movie),
-                  ),
+                      // =========================================================
+                      // KONDISI 3: BERHASIL AMBIL DATA DARI BACKEND
+                      // =========================================================
+                      else ...[
+                        // Section Top Movies
+                        MovieSection(
+                          title: "Top Movies",
+                          movies: movieProvider.topMovies,
+                          isWide: true,
+                          onMovieTap: (movie) => _navigateToDetail(context, movie),
+                        ),
 
-                  const SizedBox(height: 80),
-                  const AppFooter(),
-                  const SizedBox(height: 20),
-                ],
+                        const SizedBox(height: 24),
+
+                        // Section Now Showing
+                        MovieSection(
+                          title: "Now Showing",
+                          movies: movieProvider.nowPlaying,
+                          isWide: false,
+                          onMovieTap: (movie) => _navigateToDetail(context, movie),
+                        ),
+                      ],
+
+                      const SizedBox(height: 80),
+                      const AppFooter(),
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                },
               ),
             ),
           ),
@@ -78,7 +138,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🟢 Helper untuk navigasi menu bawah
   void _onBottomNavTap(BuildContext context, int index) {
     switch (index) {
       case 0:
@@ -105,7 +164,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🟢 Terima parameter locationProvider
   Widget _buildHeader(BuildContext context, LocationProvider locationProvider) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -116,17 +174,12 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // 🟢 Logika showDialog disederhanakan tanpa perlu menangkap variabel return manual
-  Widget _buildCitySelector(
-    BuildContext context,
-    LocationProvider locationProvider,
-  ) {
+  Widget _buildCitySelector(BuildContext context, LocationProvider locationProvider) {
     return GestureDetector(
       onTap: () {
         showDialog(
           context: context,
-          builder: (_) =>
-              CityPickerDialog(), // Constructor bersih tanpa kirim parameter manual
+          builder: (_) => CityPickerDialog(), 
         );
       },
       child: Container(
@@ -146,7 +199,6 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              // 🟢 Menampilkan data langsung dari state global lokasi
               locationProvider.selectedCity,
               style: const TextStyle(
                 color: Colors.white,
