@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/movie.dart';
 import '../../domain/providers/movie_provider.dart';
-import '../../domain/providers/location_provider.dart'; 
 import '../../utils/constants.dart';
 import 'detail_screen.dart';
 import 'search_screen.dart';
@@ -12,7 +11,6 @@ import '../widgets/bottom_nav.dart';
 import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart';
-import '../widgets/city_picker.dart';
 
 // 1. 🟢 DIUBAH JADI STATEFULWIDGET: Supaya bisa nembak API pas halaman diakses
 class HomeScreen extends StatefulWidget {
@@ -34,9 +32,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Listener untuk lokasi tetap di root build method
-    final locationProvider = Provider.of<LocationProvider>(context);
-
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       bottomNavigationBar: CustomBottomNav(
@@ -55,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildHeader(context, locationProvider), 
+                      const AppLogo(), // <-- FIX-NYA DI SINI
                       const SizedBox(height: 16),
                       _buildSearchBar(context),
                       const SizedBox(height: 24),
@@ -161,60 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => DetailScreen(movie: movie)),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, LocationProvider locationProvider) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const AppLogo(),
-        _buildCitySelector(context, locationProvider),
-      ],
-    );
-  }
-
-  Widget _buildCitySelector(BuildContext context, LocationProvider locationProvider) {
-    return GestureDetector(
-      onTap: () {
-        showDialog(
-          context: context,
-          builder: (_) => CityPickerDialog(), 
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppConstants.cardColor,
-          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.location_on,
-              color: AppConstants.primaryColor,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              locationProvider.selectedCity,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: 4),
-            const Icon(
-              Icons.arrow_drop_down,
-              color: AppConstants.textMuted,
-              size: 18,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
