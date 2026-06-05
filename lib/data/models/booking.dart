@@ -5,7 +5,7 @@ class Booking {
   final String time;
   final List<String> seats;
   final double totalPrice;
-  final String status; // "upcoming" atau "history"
+  final String status; 
 
   Booking({
     required this.movieTitle,
