@@ -17,3 +17,6 @@ class Booking {
     required this.status,
   });
 }
+
+//ini untuk menyimpan data booking yang sudah dilakukan, 
+//bisa digunakan untuk menampilkan riwayat booking atau detail booking yang sedang berlangsung.

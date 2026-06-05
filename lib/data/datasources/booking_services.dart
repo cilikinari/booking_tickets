@@ -4,6 +4,8 @@ import '../models/schedule.dart';
 import '../models/studio.dart';
 import '../models/cinema.dart';
 
+// BookingService ini bertugas untuk melakukan request ke API dan mengembalikan data yang sudah diolah menjadi model.
+//disini digabungkan semua fungsi yang dibutuhkan untuk melakukan booking
 class BookingService {
   static const String _baseUrl = 'http://localhost:3000/api/v1';
 

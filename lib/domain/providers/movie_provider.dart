@@ -1,54 +1,51 @@
 import 'package:flutter/material.dart';
 import '../../data/models/movie.dart';
-import '../../data/datasources/movie_services.dart'; // 🟢 1. Import API Service kamu
+import '../../repository/movie_repo.dart'; // 🟢 SEKARANG IMPORT REPOSITORY
 
 class MovieProvider with ChangeNotifier {
-  // Instance untuk memanggil API
-  final MovieService _movieService = MovieService();
+  // 🟢 Panggil si pelayan data (Repository), bukan API langsung
+  final MovieRepository _movieRepository = MovieRepository();
 
-  // Data Master (Sekarang kosong dulu, diisi setelah API merespon)
+  // Data Master (Diisi setelah mendapat hasil bersih dari Repository)
   List<Movie> topMovies = [];
   List<Movie> nowPlaying = [];
 
-  // 🟢 2. STATE BARU: Untuk kontrol Loading dan Error dari Internet
+  // STATE: Kontrol Loading dan Error
   bool _isLoading = false;
   String _errorMessage = '';
 
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
-  // STATE SEARCH (Punya kamu tetap aman di sini)
+  // STATE SEARCH (Fitur pencarian lokal kamu tetap aman di sini)
   List<Movie> _filteredMovies = [];
   bool _isSearching = false;
 
   List<Movie> get filteredMovies => _filteredMovies;
   bool get isSearching => _isSearching;
 
-  // 🟢 3. FUNGSI BARU: Mengambil data nyata dari Backend
+  // 🟢 FUNGSI BARU: Jauh lebih bersih karena tugas berat dipindah ke Repo
   Future<void> fetchHomeData() async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners(); // Beritahu UI untuk menampilkan loading spinner
 
     try {
-      // Panggil API service
-      final List<Movie> fetchedMovies = await _movieService.fetchNowShowing();
+      // Provider tinggal terima hasil bersih yang sudah dibelah oleh Repository
+      final hasilData = await _movieRepository.ambilDataHome();
 
-      // 💡 TRIK MEMBELAH DATA:
-      // Ambil 5 film pertama untuk Top Movies
-      topMovies = fetchedMovies.take(5).toList();
-      // Masukkan semua film ke Now Playing
-      nowPlaying = fetchedMovies;
+      topMovies = hasilData['topMovies'] ?? [];
+      nowPlaying = hasilData['nowPlaying'] ?? [];
     } catch (e) {
       // Tangkap pesan error jika server mati/gagal koneksi
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
       _isLoading = false;
-      notifyListeners(); // Beritahu UI kalau proses download selesai
+      notifyListeners(); // Beritahu UI kalau proses selesai
     }
   }
 
-  // 🟢 4. FITUR SEARCH KAMU (100% Utuh & Bekerja Otomatis dengan Data API)
+  // 🟢 FITUR SEARCH KAMU (100% Utuh & Tetap Berada di Sini karena Mengatur UI)
   void searchMovies(String query) {
     if (query.isEmpty) {
       _isSearching = false;
@@ -72,7 +69,7 @@ class MovieProvider with ChangeNotifier {
         .toList();
 
     _isSearching = true;
-    notifyListeners();
+    notifyListeners(); // Menyuruh layar UI menggambar ulang hasil pencarian
   }
 
   void clearSearch() {

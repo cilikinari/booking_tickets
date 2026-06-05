@@ -15,3 +15,5 @@ class BookingRepository {
 
   Future<List<Cinema>> getCinemas() => _bookingService.fetchAllCinemas();
 }
+// Repository ini bertugas untuk menghubungkan antara data source (BookingService) dengan provider (BookingProvider).
+// Disini kita bisa menambahkan fungsi-fungsi yang dibutuhkan untuk melakukan booking. 

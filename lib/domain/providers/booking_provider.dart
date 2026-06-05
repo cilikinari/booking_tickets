@@ -41,9 +41,15 @@ class BookingProvider extends ChangeNotifier {
   // 🟢 FUNGSI HELPER: MENGGABUNGKAN NAMA BIOSKOP + STUDIO
   // ========================================================
   String _getCombinedName(int studioId) {
-    final studio = _allStudios.firstWhere((st) => st.id == studioId, orElse: () => Studio(id: 0, cinemaId: 0, studioName: ''));
-    final cinema = _allCinemas.firstWhere((c) => c.id == studio.cinemaId, orElse: () => Cinema(id: 0, name: ''));
-    
+    final studio = _allStudios.firstWhere(
+      (st) => st.id == studioId,
+      orElse: () => Studio(id: 0, cinemaId: 0, studioName: ''),
+    );
+    final cinema = _allCinemas.firstWhere(
+      (c) => c.id == studio.cinemaId,
+      orElse: () => Cinema(id: 0, name: '', cityId: 0),
+    );
+
     if (cinema.name.isEmpty) return studio.studioName;
     return "${cinema.name} - ${studio.studioName}"; // Output: "XXI Mall - Premiere"
   }
@@ -62,25 +68,27 @@ class BookingProvider extends ChangeNotifier {
 
   List<String> get dates {
     if (_selectedCinema.isEmpty) return [];
-    return _allSchedules.where((s) {
-      if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
-      return _getCombinedName(s.studioId) == _selectedCinema;
-    })
-    .map((s) => s.date)
-    .toSet()
-    .toList();
+    return _allSchedules
+        .where((s) {
+          if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
+          return _getCombinedName(s.studioId) == _selectedCinema;
+        })
+        .map((s) => s.date)
+        .toSet()
+        .toList();
   }
 
   List<String> get times {
     if (_selectedCinema.isEmpty || _selectedDate.isEmpty) return [];
-    return _allSchedules.where((s) {
-      if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
-      if (s.date != _selectedDate) return false;
-      return _getCombinedName(s.studioId) == _selectedCinema;
-    })
-    .map((s) => s.time)
-    .toSet()
-    .toList();
+    return _allSchedules
+        .where((s) {
+          if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
+          if (s.date != _selectedDate) return false;
+          return _getCombinedName(s.studioId) == _selectedCinema;
+        })
+        .map((s) => s.time)
+        .toSet()
+        .toList();
   }
 
   int get ticketPrice {
@@ -213,7 +221,9 @@ class BookingProvider extends ChangeNotifier {
     );
   }
 
-  void stopTimer() { _timer?.cancel(); }
+  void stopTimer() {
+    _timer?.cancel();
+  }
 
   @override
   void dispose() {

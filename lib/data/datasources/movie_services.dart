@@ -11,8 +11,6 @@ class MovieService {
 
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
-      print("🔥 2. DAPAT RESPONSE KODE: ${response.statusCode}"); // JEBAKAN 2
-      print("🔥 3. ISI DATANYA: ${response.body}"); // JEBAKAN 3
 
       if (response.statusCode == 200) {
         final dynamic decodedData = json.decode(response.body);
@@ -26,7 +24,7 @@ class MovieService {
           jsonList = [];
         }
 
-        print("🔥 4. BANYAKNYA FILM DI JSON: ${jsonList.length}"); // JEBAKAN 4
+        // print("🔥 4. BANYAKNYA FILM DI JSON: ${jsonList.length}"); // JEBAKAN 4
 
         return jsonList.map((jsonItem) => Movie.fromJson(jsonItem)).toList();
       } else {

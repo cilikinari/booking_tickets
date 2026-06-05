@@ -21,10 +21,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MovieProvider()),
         ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
-        ChangeNotifierProvider(
-          create: (_) => HistoryProvider(),
-        ), // 🟢 Tambahkan HistoryProvider
-        // Nanti kalau ada AuthProvider atau TicketProvider tinggal tambah di bawah sini
+        ChangeNotifierProvider(create: (_) => HistoryProvider()),
+       
+
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
