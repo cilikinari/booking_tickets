@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart'; // 🟢 Tambahan wajib untuk kIsWeb
 import 'package:flutter/material.dart';
 import '../../data/models/movie.dart';
 import '../../utils/constants.dart';
@@ -27,6 +28,20 @@ class OrderSummaryCard extends StatelessWidget {
 
   String get _formattedSeats => seats.join(', ');
 
+  // 🟢 FUNGSI BARU: Deteksi URL otomatis biar gak nge-hang di Web/Emulator
+  String _getImageUrl(String path) {
+    if (path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+
+    // Bersihkan slash di awal agar tidak terjadi double slash (//)
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+
+    // Gunakan localhost untuk Web/Desktop, dan 10.0.2.2 untuk Emulator Android
+    final baseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+
+    return '$baseUrl/$cleanPath';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -34,15 +49,14 @@ class OrderSummaryCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🟢 Widget Gambar dengan Loading Builder & Tameng Error
+          // 🟢 Widget Gambar yang sudah disempurnakan
           ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
             child: Image.network(
-              movie.posterUrl,
+              _getImageUrl(movie.posterUrl),
               width: posterWidth,
               height: posterHeight,
               fit: BoxFit.cover,
-              // 🟢 Tambahan: Loading Builder
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return Container(
@@ -54,12 +68,11 @@ class OrderSummaryCard extends StatelessWidget {
                   ),
                 );
               },
-              // 🟢 ErrorBuilder agar layout tetap rapi
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: posterWidth,
                   height: posterHeight,
-                  color: AppConstants.inputColor, // Menggunakan warna senada dengan tema
+                  color: AppConstants.inputColor,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -87,7 +100,7 @@ class OrderSummaryCard extends StatelessWidget {
               children: [
                 Text(
                   movie.title,
-                  maxLines: 2, // 🟢 Proteksi untuk judul yang terlalu panjang
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppConstants.textPrimary,

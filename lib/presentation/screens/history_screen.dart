@@ -1,12 +1,13 @@
+import 'package:flutter/foundation.dart'; // 🟢 TAMBAHAN WAJIB UNTUK DETEKSI WEB
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
 import '../../data/models/booking.dart';
 import '../../data/models/movie.dart';
-import '../../domain/providers/history_provider.dart'; 
-import '../../domain/providers/movie_provider.dart'; 
+import '../../domain/providers/history_provider.dart';
+import '../../domain/providers/movie_provider.dart';
 import '../widgets/bottom_nav.dart';
 import '../../utils/constants.dart';
-import '../../utils/helpers.dart'; 
+import '../../utils/helpers.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
@@ -24,6 +25,17 @@ class HistoryScreen extends StatelessWidget {
     } catch (e) {
       return null;
     }
+  }
+
+  // 🟢 FUNGSI HELPER BARU: Deteksi URL otomatis biar gak nge-hang di Web/Emulator
+  String _getImageUrl(String path) {
+    if (path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    final baseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+
+    return '$baseUrl/$cleanPath';
   }
 
   @override
@@ -190,12 +202,12 @@ class HistoryScreen extends StatelessWidget {
   }
 
   Widget _buildPoster(Movie? movie, double w, double h) {
-    // 🟢 UBAH JADI IMAGE.NETWORK: Mengambil link poster dari database backend
     if (movie != null && movie.posterUrl.isNotEmpty) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.network(
-          movie.posterUrl,
+          // 🟢 GUNAKAN HELPER _getImageUrl DI SINI
+          _getImageUrl(movie.posterUrl),
           width: w,
           height: h,
           fit: BoxFit.cover,
@@ -235,7 +247,6 @@ class HistoryScreen extends StatelessWidget {
         ),
         if (movie != null) ...[
           const SizedBox(height: 4),
-          // 🟢 UBAH DATA GENRE: Sesuai dengan format list genre milik API baru
           Text(
             movie.genres.map((g) => g.name).join(', '),
             style: TextStyle(

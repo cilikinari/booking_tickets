@@ -151,24 +151,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 🟢 Data string countdown dibaca langsung dari hasil format di provider
         CountdownBanner(formattedCountdown: provider.formattedCountdown),
         const SizedBox(height: 32),
         IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Bagian Kiri: Metode Pembayaran
               Expanded(
+                flex: 5, // 🟢 Beri rasio ruang 5
                 child: PaymentMethodsCard(
                   selectedPayment: provider.selectedPayment,
-                  // 🟢 Memicu perubahan pilihan metode pembayaran ke dalam provider bisnis
                   onMethodSelected: (method) =>
                       provider.selectPaymentMethod(method),
                 ),
               ),
               const SizedBox(width: 48),
-              SizedBox(
-                width: 460,
+
+              // Bagian Kanan: Ringkasan Pesanan (Dibuat Responsif)
+              Expanded(
+                flex: 4, // 🟢 Ganti SizedBox dengan Expanded agar fleksibel
                 child: Padding(
                   padding: const EdgeInsets.only(top: 42),
                   child: OrderSummaryCard(
@@ -178,8 +180,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     time: provider.selectedTime,
                     seats: provider.selectedSeats.map((s) => s.id).toList(),
                     totalPrice: provider.totalPrice.toDouble(),
-                    posterHeight: 320,
-                    posterWidth: 200,
+                    // 🟢 Ukuran poster sedikit dirapikan
+                    posterHeight: 280,
+                    posterWidth: 180,
                   ),
                 ),
               ),
