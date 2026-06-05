@@ -34,22 +34,61 @@ class OrderSummaryCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 🟢 Widget Gambar dengan Loading Builder & Tameng Error
           ClipRRect(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(8.0),
             child: Image.network(
               movie.posterUrl,
               width: posterWidth,
               height: posterHeight,
               fit: BoxFit.cover,
+              // 🟢 Tambahan: Loading Builder
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  width: posterWidth,
+                  height: posterHeight,
+                  color: AppConstants.inputColor,
+                  child: const Center(
+                    child: CircularProgressIndicator(color: Colors.white54),
+                  ),
+                );
+              },
+              // 🟢 ErrorBuilder agar layout tetap rapi
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: posterWidth,
+                  height: posterHeight,
+                  color: AppConstants.inputColor, // Menggunakan warna senada dengan tema
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.movie_filter_outlined,
+                        color: Colors.white24,
+                        size: 40,
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'No Poster',
+                        style: TextStyle(color: Colors.white24, fontSize: 10),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
           const SizedBox(width: 18),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   movie.title,
+                  maxLines: 2, // 🟢 Proteksi untuk judul yang terlalu panjang
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppConstants.textPrimary,
                     fontWeight: FontWeight.bold,
@@ -58,7 +97,9 @@ class OrderSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  movie.genres.isNotEmpty ? movie.genres.map((g) => g.name).join(', ') : 'No Genre',
+                  movie.genres.isNotEmpty
+                      ? movie.genres.map((g) => g.name).join(', ')
+                      : 'No Genre',
                   style: const TextStyle(
                     color: AppConstants.textMuted,
                     fontSize: 12,
@@ -111,7 +152,7 @@ class OrderSummaryCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'Rp ${AppHelpers.formatNumber(totalPrice)}', // Menggunakan format global
+        'Rp ${AppHelpers.formatNumber(totalPrice)}',
         style: const TextStyle(
           color: AppConstants.textPrimary,
           fontWeight: FontWeight.bold,
