@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../widgets/app_logo.dart';
-import '../widgets/app_footer.dart'; 
+import '../widgets/app_footer.dart';
 import '../../domain/providers/auth_provider.dart';
 import 'home_screen.dart';
 
@@ -34,53 +34,69 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40.0,
-                      vertical: 40.0,
-                    ),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: isWide
-                          ? Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: _buildBrandingSection(),
+            // Konten Utama (Form & Branding)
+            Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40.0,
+                          vertical: 40.0,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: isWide
+                              ? Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: _buildBrandingSection(),
+                                    ),
+                                    const SizedBox(width: 100),
+                                    Expanded(
+                                      flex: 1,
+                                      child: _buildFormSection(),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    _buildBrandingSection(),
+                                    const SizedBox(height: 60),
+                                    _buildFormSection(),
+                                  ],
                                 ),
-                                const SizedBox(width: 100),
-                                Expanded(
-                                  flex: 1, 
-                                  child: _buildFormSection(),
-                                ),
-                              ],
-                            )
-                          : Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                _buildBrandingSection(),
-                                const SizedBox(height: 60),
-                                _buildFormSection(),
-                              ],
-                            ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 24,
+                    horizontal: 40,
+                  ),
+                  decoration: const BoxDecoration(
+                    border: Border(top: BorderSide(color: Colors.white10)),
+                  ),
+                  child: const AppFooter(),
+                ),
+              ],
+            ), // 🟢 TOMBOL BACK (Persis seperti di RegisterScreen)
+            Positioned(
+              top: 16,
+              left: 16,
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Navigator.maybePop(context),
               ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 40),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: Colors.white10)),
-              ),
-              child: const AppFooter(),
             ),
           ],
         ),
@@ -194,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          
+
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               return SizedBox(
@@ -217,7 +233,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (email.isEmpty || password.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Email dan password wajib diisi!'),
+                                content: Text(
+                                  'Email dan password wajib diisi!',
+                                ),
                                 backgroundColor: Colors.orange,
                               ),
                             );
@@ -225,14 +243,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           }
 
                           try {
-                            bool isSuccess = await authProvider.loginUser(email, password);
-                            
+                            bool isSuccess = await authProvider.loginUser(
+                              email,
+                              password,
+                            );
+
                             if (isSuccess && context.mounted) {
                               Navigator.pushAndRemoveUntil(
                                 context,
                                 PageRouteBuilder(
-                                  pageBuilder: (context, animation1, animation2) =>
-                                      const HomeScreen(),
+                                  pageBuilder:
+                                      (context, animation1, animation2) =>
+                                          const HomeScreen(),
                                   transitionDuration: Duration.zero,
                                 ),
                                 (route) => false,
@@ -242,7 +264,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content: Text(e.toString().replaceAll('Exception: ', '')),
+                                  content: Text(
+                                    e.toString().replaceAll('Exception: ', ''),
+                                  ),
                                   backgroundColor: Colors.red,
                                 ),
                               );
