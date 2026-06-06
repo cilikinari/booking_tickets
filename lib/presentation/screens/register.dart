@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Import Provider
 import '../../utils/constants.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart';
+import '../../domain/providers/auth_provider.dart'; // Import AuthProvider
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController(); // Controller No HP (BARU)
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -25,24 +28,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose(); // Jangan lupa di dispose
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
-  }
-
-  void _handleRegister() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Registration successful! Please Sign In.'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-      );
-    }
   }
 
   @override
@@ -55,7 +44,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Back Button
             Positioned(
               top: 16,
               left: 16,
@@ -64,8 +52,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onPressed: () => Navigator.maybePop(context),
               ),
             ),
-
-            // Main Content
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(
@@ -82,10 +68,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         _buildDesktopLayout()
                       else
                         _buildMobileLayout(),
-
                       const SizedBox(height: 60),
-
-                      // Menggunakan AppFooter yang kamu buat
                       const AppFooter(),
                     ],
                   ),
@@ -137,7 +120,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Menggunakan AppLogo yang kamu buat dengan set fontSize besar
         const AppLogo(fontSize: 48),
         const SizedBox(height: 16),
         Text(
@@ -170,6 +152,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hint: 'Enter your name',
               validator: (val) =>
                   val == null || val.isEmpty ? 'Name required' : null,
+            ),
+            const SizedBox(height: 20),
+
+            // Input No HP yang baru ditambahkan
+            _buildInputField(
+              controller: _phoneController,
+              label: 'PHONE NUMBER',
+              hint: 'Enter your phone number',
+              keyboardType: TextInputType.phone,
+              validator: (val) =>
+                  val == null || val.isEmpty ? 'Phone number required' : null,
             ),
             const SizedBox(height: 20),
 
@@ -229,35 +222,90 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               validator: (val) {
-                if (val == null || val.isEmpty)
+                if (val == null || val.isEmpty) {
                   return 'Please confirm password';
-                if (val != _passwordController.text)
+                }
+                if (val != _passwordController.text) {
                   return 'Passwords do not match';
+                }
                 return null;
               },
             ),
             const SizedBox(height: 32),
 
-            SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            // Tombol Eksekusi menggunakan Consumer
+            Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                return SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConstants.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    onPressed: authProvider.isLoading
+                        ? null
+                        : () async {
+                            // Cek validasi form
+                            if (_formKey.currentState!.validate()) {
+                              try {
+                                // Eksekusi fungsi nembak API
+                                bool isSuccess = await authProvider.registerUser(
+                                  _nameController.text.trim(),
+                                  _emailController.text.trim(),
+                                  _passwordController.text.trim(),
+                                  _phoneController.text.trim(),
+                                );
+
+                                if (isSuccess && context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Registration successful! Please Sign In.'),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                  // Pindah ke layar login kalau sukses
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                                  );
+                                }
+                              } catch (e) {
+                                // Tampilkan pesan error kalau database menolak (misal email duplikat)
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(e.toString().replaceAll('Exception: ', '')),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            }
+                          },
+                    child: authProvider.isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
-                  elevation: 0,
-                ),
-                onPressed: _handleRegister,
-                child: const Text(
-                  'Create Account',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+                );
+              },
             ),
             const SizedBox(height: 24),
 

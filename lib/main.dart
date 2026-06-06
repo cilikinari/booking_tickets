@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // 🟢 1. Pastikan import provider
-import 'domain/providers/movie_provider.dart'; // 🟢 2. Sesuaikan dengan path MovieProvider-mu
-import 'domain/providers/booking_provider.dart'; // 🟢 4. Tambahkan import BookingProvider
-import 'domain/providers/history_provider.dart'; // 🟢 Import HistoryProvider
+import 'package:provider/provider.dart'; 
+import 'domain/providers/movie_provider.dart'; 
+import 'domain/providers/booking_provider.dart'; 
+import 'domain/providers/history_provider.dart'; 
+import 'domain/providers/auth_provider.dart';
 import 'presentation/screens/home_unauth_screen.dart';
 
 void main() {
@@ -14,19 +15,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🟢 3. Bungkus MaterialApp kamu dengan MultiProvider
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => MovieProvider()),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => HistoryProvider()),
-       
-
+        ChangeNotifierProvider(create: (_) => AuthProvider()), 
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Bioskop App',
-        theme: ThemeData.dark(), // Sesuaikan dengan tema aplikasimu
+        title: 'Cinema +',
+        theme: ThemeData.dark(), 
         home: const HomeUnauthScreen(),
       ),
     );

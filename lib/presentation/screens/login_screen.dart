@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart'; 
+import '../../domain/providers/auth_provider.dart';
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -13,6 +15,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
+
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +55,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: _buildBrandingSection(),
                                 ),
                                 const SizedBox(width: 100),
-                                Expanded(flex: 1, child: _buildFormSection()),
+                                Expanded(
+                                  flex: 1, 
+                                  child: _buildFormSection(),
+                                ),
                               ],
                             )
                           : Column(
@@ -65,7 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: const BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.white10)),
               ),
-              // Panggil widget AppFooter di sini
               child: const AppFooter(),
             ),
           ],
@@ -121,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           TextField(
+            controller: _emailController,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: InputDecoration(
               filled: true,
@@ -149,6 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(height: 12),
           TextField(
+            controller: _passwordController,
             obscureText: _obscurePassword,
             style: const TextStyle(color: Colors.white, fontSize: 15),
             decoration: InputDecoration(
@@ -178,38 +194,82 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation1, animation2) =>
-                        const HomeScreen(),
-                    transitionDuration: Duration.zero,
+          
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              return SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppConstants.primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
                   ),
-                  (route) => false,
-                );
-              },
-              child: const Text(
-                'Sign In',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+                  onPressed: authProvider.isLoading
+                      ? null
+                      : () async {
+                          final email = _emailController.text.trim();
+                          final password = _passwordController.text.trim();
+
+                          if (email.isEmpty || password.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Email dan password wajib diisi!'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+
+                          try {
+                            bool isSuccess = await authProvider.loginUser(email, password);
+                            
+                            if (isSuccess && context.mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation1, animation2) =>
+                                      const HomeScreen(),
+                                  transitionDuration: Duration.zero,
+                                ),
+                                (route) => false,
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().replaceAll('Exception: ', '')),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                  child: authProvider.isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
