@@ -1,48 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // 🟢 Wajib import Provider
 import '../../data/models/seat.dart';
-import '../../data/seat_data.dart';
+import '../../domain/providers/seat_provider.dart'; // 🟢 Sesuaikan path ke SeatProvider
 import '../../utils/constants.dart';
 import 'seat_item.dart';
 
-class CinemaSeatLayout extends StatefulWidget {
+class CinemaSeatLayout extends StatelessWidget {
   final ValueChanged<List<Seat>> onSelectionChanged;
 
   const CinemaSeatLayout({super.key, required this.onSelectionChanged});
-
-  @override
-  State<CinemaSeatLayout> createState() => _CinemaSeatLayoutState();
-}
-
-class _CinemaSeatLayoutState extends State<CinemaSeatLayout> {
-  late List<List<Seat?>> _rows;
-
-  @override
-  void initState() {
-    super.initState();
-    _rows = SeatData.generateRows();
-  }
-
-  void _toggleSeat(int rowIdx, int colIdx) {
-    final seat = _rows[rowIdx][colIdx];
-    if (seat == null || !seat.isSelectable) return;
-
-    setState(() {
-      _rows[rowIdx][colIdx] = seat.copyWith(
-        status: seat.status == SeatStatus.selected
-            ? SeatStatus.available
-            : SeatStatus.selected,
-      );
-    });
-
-    // Kirim data kursi yang dipilih kembali ke halaman SeatScreen
-    final selectedSeats = _rows
-        .expand((r) => r)
-        .whereType<Seat>()
-        .where((s) => s.status == SeatStatus.selected)
-        .toList();
-
-    widget.onSelectionChanged(selectedSeats);
-  }
 
   double _calcSeatSize(BuildContext context) {
     const seatsPerRow = 10;
@@ -59,13 +25,122 @@ class _CinemaSeatLayoutState extends State<CinemaSeatLayout> {
     return size.clamp(24.0, 52.0);
   }
 
+  List<List<Seat?>> _buildGridFromApi(List<Seat> apiSeats) {
+    Map<String, List<Seat>> rowMap = {};
+    
+    // 1. Kelompokkan berdasarkan huruf depan (Misal: "A1" dan "A2" masuk grup "A")
+    for (var seat in apiSeats) {
+      if (seat.seatNumber.isEmpty) continue;
+      String rowLetter = seat.seatNumber[0].toUpperCase();
+      rowMap.putIfAbsent(rowLetter, () => []).add(seat);
+    }
+
+    // 2. Urutkan baris dari A sampai huruf terakhir
+    var sortedRowKeys = rowMap.keys.toList()..sort();
+    List<List<Seat?>> grid = [];
+
+    for (var key in sortedRowKeys) {
+      var rowSeats = rowMap[key]!;
+      
+      // 3. Urutkan angka kursinya (1, 2, 3, dst)
+      rowSeats.sort((a, b) {
+        int numA = int.tryParse(a.seatNumber.substring(1)) ?? 0;
+        int numB = int.tryParse(b.seatNumber.substring(1)) ?? 0;
+        return numA.compareTo(numB);
+      });
+
+      // 4. Masukkan kursi ke baris, dan potong dengan "Lorong" (null) setelah kursi ke-4
+      List<Seat?> rowWithAisle = [];
+      for (int i = 0; i < rowSeats.length; i++) {
+        rowWithAisle.add(rowSeats[i]);
+        if (i == 3) { // i == 3 artinya kursi ke-4 (karena mulai dari 0)
+          rowWithAisle.add(null); // Ini Lorong
+        }
+      }
+      grid.add(rowWithAisle);
+    }
+
+    return grid;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Pantau SeatProvider
+    final seatProvider = Provider.of<SeatProvider>(context);
+
+    // Kalau sedang loading narik data dari Golang
+    if (seatProvider.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(40.0),
+        child: CircularProgressIndicator(color: AppConstants.primaryColor),
+      );
+    }
+
+    // Kalau belum ada data atau kosong
+    if (seatProvider.seats.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(40.0),
+        child: Text(
+          'Denah kursi tidak tersedia',
+          style: TextStyle(color: Colors.white70),
+        ),
+      );
+    }
+
+    // Panggil fungsi ajaib pembuat grid
+    final grid = _buildGridFromApi(seatProvider.seats);
+    final seatSize = _calcSeatSize(context);
+
     return Column(
       children: [
         _buildScreenCurve(),
         const SizedBox(height: 28),
-        _buildSeatGrid(),
+
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(), // Biar scrollnya mantul mulus
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              children: List.generate(grid.length, (rowIdx) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(grid[rowIdx].length, (colIdx) {
+                      final seat = grid[rowIdx][colIdx];
+
+                      // Kalau ini area Lorong (null), beri jarak kosong
+                      if (seat == null) return const SizedBox(width: 18);
+
+                      // Cek apakah kursi ini ada di daftar pilihan User
+                      final isSelected = seatProvider.selectedSeats.contains(seat);
+
+                      // Timpa statusnya jadi 'selected' hanya untuk keperluan UI (warna hijau)
+                      final displaySeat = isSelected
+                          ? seat.copyWith(status: SeatStatus.selected)
+                          : seat;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 3),
+                        child: SeatItem(
+                          seat: displaySeat,
+                          size: seatSize,
+                          onTap: () {
+                            // 1. Eksekusi logika pilih kursi di SeatProvider
+                            seatProvider.toggleSeat(seat);
+                            // 2. Beritahu BookingProvider kalau ada perubahan harga/tiket
+                            onSelectionChanged(seatProvider.selectedSeats);
+                          },
+                        ),
+                      );
+                    }),
+                  ),
+                );
+              }),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -92,48 +167,13 @@ class _CinemaSeatLayoutState extends State<CinemaSeatLayout> {
       ),
     );
   }
-
-  Widget _buildSeatGrid() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final seatSize = _calcSeatSize(context);
-
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: List.generate(_rows.length, (rowIdx) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(_rows[rowIdx].length, (colIdx) {
-                    final seat = _rows[rowIdx][colIdx];
-                    if (seat == null) return const SizedBox(width: 18);
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 3),
-                      child: SeatItem(
-                        seat: seat,
-                        size: seatSize,
-                        onTap: () => _toggleSeat(rowIdx, colIdx),
-                      ),
-                    );
-                  }),
-                ),
-              );
-            }),
-          ),
-        );
-      },
-    );
-  }
 }
 
 class _ScreenCurvePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
+      ..color = Colors.white.withOpacity(0.5)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 

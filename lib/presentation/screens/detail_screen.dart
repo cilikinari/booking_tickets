@@ -80,7 +80,7 @@ class DetailScreen extends StatelessWidget {
                     ),
 
                   const SizedBox(height: 32),
-                  const BookButton(),
+                  BookButton(scheduleId: bookingProvider.selectedScheduleId),
                 ],
               ),
             ),

@@ -49,7 +49,7 @@ class SeatItem extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            seat.id,
+            seat.seatNumber,
             style: TextStyle(
               color: _seatTextColor,
               fontSize: size * 0.32,

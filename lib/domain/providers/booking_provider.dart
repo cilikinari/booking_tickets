@@ -106,6 +106,21 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
+  // Return currently selected schedule id, or -1 if none
+  int get selectedScheduleId {
+    try {
+      final currentSchedule = _allSchedules.firstWhere((s) {
+        if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
+        if (s.date != _selectedDate) return false;
+        if (s.time != _selectedTime) return false;
+        return _getCombinedName(s.studioId) == _selectedCinema;
+      });
+      return currentSchedule.id;
+    } catch (e) {
+      return -1;
+    }
+  }
+
   int get totalPrice => _selectedSeats.length * ticketPrice;
   String get selectedCinema => _selectedCinema;
   String get selectedDate => _selectedDate;

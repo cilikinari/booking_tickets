@@ -39,8 +39,7 @@ class SeatData {
         cols.add(
           Seat(
             id: id,
-            row: row,
-            number: col,
+            seatNumber: id,
             status: bookedSeatIds.contains(id)
                 ? SeatStatus.booked
                 : SeatStatus.available,
