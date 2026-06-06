@@ -10,12 +10,33 @@ class AuthProvider extends ChangeNotifier {
   String? _token;
   String? get token => _token;
 
+  // Profile fields
+  String? name;
+  String? phone;
+  String? emailUser;
+
+  // Load profile from repository using saved token
+  Future<void> loadProfile() async {
+    if (_token == null) return;
+    try {
+      final data = await _authRepo.getProfile(_token!);
+      name = data['name'] ?? data['full_name'] ?? data['username'];
+      phone = data['phone'] ?? data['phone_number'] ?? '-';
+      emailUser = data['email'] ?? data['email_user'] ?? '-';
+      notifyListeners();
+    } catch (e) {
+      // ignore errors for now
+    }
+  }
+
   Future<bool> loginUser(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
       _token = await _authRepo.login(email, password);
+      // setelah mendapatkan token, coba muat profil pengguna
+      await loadProfile();
       
       _isLoading = false;
       notifyListeners();

@@ -8,4 +8,8 @@ class AuthRepository {
   Future<bool> register(String name, String email, String password, String phone) async {
     return await AuthServices.register(name, email, password, phone);
   }
+
+  Future<Map<String, dynamic>> getProfile(String token) async {
+    return await AuthServices.getProfile(token);
+  }
 }

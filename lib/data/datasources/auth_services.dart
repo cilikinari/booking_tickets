@@ -41,6 +41,7 @@ class AuthServices {
     }
   }
 
+  // API Register
   static Future<bool> register(String name, String email, String password, String phone) async {
     final url = Uri.parse('$baseUrl/register'); 
 
@@ -67,6 +68,43 @@ class AuthServices {
       }
     } catch (e) {
       throw Exception('Gagal terhubung ke server: $e');
+    }
+  }
+
+  // API Get Profile (Membongkar JWT Token)
+  static Future<Map<String, dynamic>> getProfile(String token) async {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) throw Exception('Token JWT tidak valid');
+
+      String normalized = base64Url.normalize(parts[1]);
+      String decodedPayload = utf8.decode(base64Url.decode(normalized));
+      Map<String, dynamic> payloadMap = jsonDecode(decodedPayload);
+
+      final userId = payloadMap['id'] ?? payloadMap['user_id'] ?? payloadMap['sub'];
+
+      if (userId == null) {
+        throw Exception('User ID tidak ditemukan di dalam token');
+      }
+
+      final url = Uri.parse('$baseUrl/user/$userId');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', 
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['data'] ?? data; 
+      } else {
+        throw Exception('Gagal mengambil data profil');
+      }
+    } catch (e) {
+      throw Exception('Error server: $e');
     }
   }
 }

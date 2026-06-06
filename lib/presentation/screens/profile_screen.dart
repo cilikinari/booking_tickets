@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../utils/constants.dart';
 import '../widgets/bottom_nav.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
 import '../widgets/logout_dialog.dart';
+import '../../domain/providers/auth_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -16,7 +18,6 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         toolbarHeight: 80,
-        // Menggunakan BackButton bawaan Flutter langsung di leading AppBar
         leading: const BackButton(color: Colors.white),
         title: const Text(
           'My Account',
@@ -34,57 +35,64 @@ class ProfileScreen extends StatelessWidget {
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 40),
-                  // Profile Image
-                  Center(
-                    child: Container(
-                      width: 140,
-                      height: 140,
-                      decoration: const BoxDecoration(
-                        color: Colors.grey,
-                        shape: BoxShape.circle,
+              // 🟢 BUNGKUS COLUMN DENGAN CONSUMER
+              child: Consumer<AuthProvider>(
+                builder: (context, auth, child) {
+                  return Column(
+                    children: [
+                      const SizedBox(height: 40),
+                      // Profile Image
+                      Center(
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          decoration: const BoxDecoration(
+                            color: Colors.grey,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.person,
+                            size: 90,
+                            color: Color(0xFF1E1E1E),
+                          ),
+                        ),
                       ),
-                      child: const Icon(
-                        Icons.person,
-                        size: 90,
-                        color: Color(0xFF1E1E1E),
+                      const SizedBox(height: 24),
+                      // Name (🟢 SEKARANG DINAMIS)
+                      Text(
+                        auth.name ?? 'Loading...', 
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Name
-                  const Text(
-                    'Cili Kinari Ariyuda',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  // Info Container
-                  Container(
-                    padding: const EdgeInsets.all(32),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF131313),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInfoRow('Phone', '088987273947'),
-                        const Divider(color: Colors.white10, height: 48),
-                        _buildInfoRow('Email', 'cilikinari@gmail.com'),
-                        const Divider(color: Colors.white10, height: 48),
-                        _buildLogOutRow(context),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                ],
+                      const SizedBox(height: 48),
+                      // Info Container
+                      Container(
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF131313),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.white10),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Phone (🟢 SEKARANG DINAMIS)
+                            _buildInfoRow('Phone', auth.phone ?? '-'),
+                            const Divider(color: Colors.white10, height: 48),
+                            // Email (🟢 SEKARANG DINAMIS)
+                            _buildInfoRow('Email', auth.emailUser ?? '-'),
+                            const Divider(color: Colors.white10, height: 48),
+                            _buildLogOutRow(context),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  );
+                },
               ),
             ),
           ),
