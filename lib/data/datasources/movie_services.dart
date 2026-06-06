@@ -7,7 +7,7 @@ class MovieService {
 
   Future<List<Movie>> fetchNowShowing() async {
     final url = Uri.parse('$_baseUrl/film');
-    print("🔥 1. MENCOBA HIT API: $url"); // JEBAKAN 1
+    print("1. MENCOBA HIT API: $url"); // JEBAKAN 1
 
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
@@ -23,9 +23,6 @@ class MovieService {
         } else {
           jsonList = [];
         }
-
-        // print("🔥 4. BANYAKNYA FILM DI JSON: ${jsonList.length}"); // JEBAKAN 4
-
         return jsonList.map((jsonItem) => Movie.fromJson(jsonItem)).toList();
       } else {
         throw Exception('Server merespon dengan kode: ${response.statusCode}');
