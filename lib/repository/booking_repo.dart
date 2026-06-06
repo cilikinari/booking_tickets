@@ -7,10 +7,7 @@ class BookingRepository {
   final BookingService _bookingService = BookingService();
 
   Future<List<Schedule>> getSchedules() => _bookingService.fetchAllSchedules();
-  
-  Future<Schedule> getScheduleById(int id) => _bookingService.fetchScheduleById(id);
 
-  // 🟢 PASTIKAN FUNGSI INI MASUK KE DALAM CLASS
   Future<List<Studio>> getStudios() => _bookingService.fetchAllStudios();
 
   Future<List<Cinema>> getCinemas() => _bookingService.fetchAllCinemas();

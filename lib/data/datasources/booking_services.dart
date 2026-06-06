@@ -9,7 +9,9 @@ import '../models/cinema.dart';
 class BookingService {
   static const String _baseUrl = 'http://localhost:3000/api/v1';
 
-  // 1. FUNGSI AMBIL SEMUA JADWAL
+  // 1.get all schedule and decode to list of Schedul.
+  //future and async use for waiting response from server and make app still responsive.
+
   Future<List<Schedule>> fetchAllSchedules() async {
     final url = Uri.parse('$_baseUrl/schedule');
     try {
@@ -30,25 +32,6 @@ class BookingService {
       }
     } catch (e) {
       throw Exception('Gagal memuat jadwal: $e');
-    }
-  }
-
-  // 2. FUNGSI AMBIL JADWAL BY ID
-  Future<Schedule> fetchScheduleById(int id) async {
-    final url = Uri.parse('$_baseUrl/schedule/$id');
-    try {
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) {
-        final dynamic decodedData = json.decode(response.body);
-        final mapData = (decodedData is Map && decodedData.containsKey('data'))
-            ? decodedData['data']
-            : decodedData;
-        return Schedule.fromJson(mapData);
-      } else {
-        throw Exception('Server error: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Gagal memuat jadwal berdasarkan ID: $e');
     }
   }
 
