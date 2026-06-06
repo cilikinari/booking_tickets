@@ -28,6 +28,8 @@ class BookingProvider extends ChangeNotifier {
   Timer? _timer;
   bool _isTimeout = false;
 
+//ini aturan getter buat ui baca data dari provider, jadi ui gak perlu tau proses dapetinnya dari mana, cukup panggil getter ini aja.
+// ini getter biasa buat data yg udah siap pakai seperti selected
   Movie? get activeMovie => _activeMovie;
   List<Seat> get selectedSeats => _selectedSeats;
   bool get isLoading => _isLoading;
@@ -36,10 +38,12 @@ class BookingProvider extends ChangeNotifier {
   int get remainingSeconds => _remainingSeconds;
   bool get isTimeout => _isTimeout;
   bool get canPay => _selectedPayment.isNotEmpty;
+  int get totalPrice => _selectedSeats.length * ticketPrice;
+  String get selectedCinema => _selectedCinema;
+  String get selectedDate => _selectedDate;
+  String get selectedTime => _selectedTime;
 
-  // ========================================================
-  // 🟢 FUNGSI HELPER: MENGGABUNGKAN NAMA BIOSKOP + STUDIO
-  // ========================================================
+//combined nama cinema and studio
   String _getCombinedName(int studioId) {
     final studio = _allStudios.firstWhere(
       (st) => st.id == studioId,
@@ -55,9 +59,13 @@ class BookingProvider extends ChangeNotifier {
   }
 
   // ========================================================
-  // 🟢 GETTER DATA UI
+  // computed getter, data harus dihitung dulu baru dikasih ke user, contohnya untuk get cinema dari movie yg aktive agar sesuai dengan movie pilihan user, 
+  //maka cinema harus dihitung dulu baru dikasih ke user, begitu juga dengan date, jika date tidak sesuai dengan movie dan 
+  //cinema pilihan user, maka date tidak muncul, begitu juga dengan time, jika time tidak sesuai dengan movie, cinema, dan date pilihan user, 
+  //maka time tidak muncul, begitu juga dengan ticket price, jika ticket price tidak sesuai dengan movie, cinema, date, dan time pilihan user, maka ticket price tidak muncul
   // ========================================================
 
+//ini buat ambil detail cinema dari movie active biar sesuai dengan yg diklik user
   List<String> get cinemas {
     return _allSchedules
         .where((s) => s.movieId.toString() == _activeMovie?.id.toString())
@@ -66,6 +74,8 @@ class BookingProvider extends ChangeNotifier {
         .toList();
   }
 
+//ini buat ngasih date, movie tidak sesuai yg dipilih user, maka jadwalnya tidak muncul, begitu juga dengan cinema, jika cinema tidak sesuai dengan yg dipilih user, maka jadwalnya tidak muncul
+// jika sesuai maka akan munculin date yang tersedia untuk jadwal itu
   List<String> get dates {
     if (_selectedCinema.isEmpty) return [];
     return _allSchedules
@@ -78,6 +88,7 @@ class BookingProvider extends ChangeNotifier {
         .toList();
   }
 
+//
   List<String> get times {
     if (_selectedCinema.isEmpty || _selectedDate.isEmpty) return [];
     return _allSchedules
@@ -121,11 +132,6 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  int get totalPrice => _selectedSeats.length * ticketPrice;
-  String get selectedCinema => _selectedCinema;
-  String get selectedDate => _selectedDate;
-  String get selectedTime => _selectedTime;
-
   String get selectedLabels {
     if (_selectedSeats.isEmpty) return 'No seat selected';
     return _selectedSeats.map((s) => s.id).join(', ');
@@ -153,7 +159,6 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 🟢 TEMBAK 3 API SEKALIGUS UNTUK MERAKIT RELASI DATABASE
       await Future.wait([
         _repository.getSchedules().then((value) => _allSchedules = value),
         _repository.getStudios().then((value) => _allStudios = value),
@@ -177,11 +182,15 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
+//logika untuk update pilihan user, misal user pilih cinema, maka date dan time harus di reset 
+//karena bisa jadi date dan time sebelumnya tidak sesuai dengan cinema yang baru dipilih user, 
+//? => adalah represent dari kondisi if. 
+
   void selectCinema(String cinema) {
     _selectedCinema = cinema;
-    _selectedDate = dates.isNotEmpty ? dates[0] : "";
+    _selectedDate = dates.isNotEmpty ? dates[0] : ""; //artinya data yg dipilih akan masuk ke _selectedDate, tapi jika data tidak ada maka _selectedDate akan diisi dengan string kosong
     _selectedTime = times.isNotEmpty ? times[0] : "";
-    notifyListeners();
+    notifyListeners(); //ngasitau ui kalo ada update data
   }
 
   void selectDate(String date) {
@@ -205,6 +214,8 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+// Logika untuk timer pembayaran, jika waktu habis maka booking akan dibatalkan dan data yang sudah dipilih akan di reset, 
+//dan user harus memulai booking dari awal lagi jika ingin melakukan booking
   void startPaymentTimer(VoidCallback onTimeoutCallback) {
     _timer?.cancel();
     _remainingSeconds = 100;
@@ -212,11 +223,10 @@ class BookingProvider extends ChangeNotifier {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds <= 1) {
         _remainingSeconds = 0;
-        _isTimeout = true;
+        _isTimeout = true; //tanda waktu habis agar tidak menghitung mundur lagi
         _timer?.cancel();
         notifyListeners();
-        onTimeoutCallback();
-        return;
+        onTimeoutCallback(); //pop up dialog timeout akan muncul setelah waktu habis
       }
       _remainingSeconds--;
       notifyListeners();
