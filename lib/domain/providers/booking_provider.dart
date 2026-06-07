@@ -1,11 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import '../../data/models/movie.dart';
 import '../../data/models/seat.dart';
 import '../../data/models/booking.dart';
 import '../../data/models/schedule.dart';
 import '../../data/models/studio.dart';
-import '../../data/models/cinema.dart'; // 🟢 IMPORT MODEL CINEMA
+import '../../data/models/cinema.dart';
 import '../../repository/booking_repo.dart';
 
 class BookingProvider extends ChangeNotifier {
@@ -13,13 +15,13 @@ class BookingProvider extends ChangeNotifier {
 
   List<Schedule> _allSchedules = [];
   List<Studio> _allStudios = [];
-  List<Cinema> _allCinemas = []; // 🟢 MENYIMPAN DATA DARI /cinema
+  List<Cinema> _allCinemas = [];
 
   bool _isLoading = false;
   String _errorMessage = '';
 
   Movie? _activeMovie;
-  String _selectedCinema = ""; // Berisi teks gabungan (contoh: "CGV - IMAX")
+  String _selectedCinema = ""; 
   String _selectedDate = "";
   String _selectedTime = "";
   List<Seat> _selectedSeats = [];
@@ -28,8 +30,6 @@ class BookingProvider extends ChangeNotifier {
   Timer? _timer;
   bool _isTimeout = false;
 
-//ini aturan getter buat ui baca data dari provider, jadi ui gak perlu tau proses dapetinnya dari mana, cukup panggil getter ini aja.
-// ini getter biasa buat data yg udah siap pakai seperti selected
   Movie? get activeMovie => _activeMovie;
   List<Seat> get selectedSeats => _selectedSeats;
   bool get isLoading => _isLoading;
@@ -43,7 +43,6 @@ class BookingProvider extends ChangeNotifier {
   String get selectedDate => _selectedDate;
   String get selectedTime => _selectedTime;
 
-//combined nama cinema and studio
   String _getCombinedName(int studioId) {
     final studio = _allStudios.firstWhere(
       (st) => st.id == studioId,
@@ -55,17 +54,9 @@ class BookingProvider extends ChangeNotifier {
     );
 
     if (cinema.name.isEmpty) return studio.studioName;
-    return "${cinema.name} - ${studio.studioName}"; // Output: "XXI Mall - Premiere"
+    return "${cinema.name} - ${studio.studioName}"; 
   }
 
-  // ========================================================
-  // computed getter, data harus dihitung dulu baru dikasih ke user, contohnya untuk get cinema dari movie yg aktive agar sesuai dengan movie pilihan user, 
-  //maka cinema harus dihitung dulu baru dikasih ke user, begitu juga dengan date, jika date tidak sesuai dengan movie dan 
-  //cinema pilihan user, maka date tidak muncul, begitu juga dengan time, jika time tidak sesuai dengan movie, cinema, dan date pilihan user, 
-  //maka time tidak muncul, begitu juga dengan ticket price, jika ticket price tidak sesuai dengan movie, cinema, date, dan time pilihan user, maka ticket price tidak muncul
-  // ========================================================
-
-//ini buat ambil detail cinema dari movie active biar sesuai dengan yg diklik user
   List<String> get cinemas {
     return _allSchedules
         .where((s) => s.movieId.toString() == _activeMovie?.id.toString())
@@ -74,8 +65,6 @@ class BookingProvider extends ChangeNotifier {
         .toList();
   }
 
-//ini buat ngasih date, movie tidak sesuai yg dipilih user, maka jadwalnya tidak muncul, begitu juga dengan cinema, jika cinema tidak sesuai dengan yg dipilih user, maka jadwalnya tidak muncul
-// jika sesuai maka akan munculin date yang tersedia untuk jadwal itu
   List<String> get dates {
     if (_selectedCinema.isEmpty) return [];
     return _allSchedules
@@ -88,7 +77,6 @@ class BookingProvider extends ChangeNotifier {
         .toList();
   }
 
-//
   List<String> get times {
     if (_selectedCinema.isEmpty || _selectedDate.isEmpty) return [];
     return _allSchedules
@@ -117,7 +105,6 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-  // Return currently selected schedule id, or -1 if none
   int get selectedScheduleId {
     try {
       final currentSchedule = _allSchedules.firstWhere((s) {
@@ -134,7 +121,7 @@ class BookingProvider extends ChangeNotifier {
 
   String get selectedLabels {
     if (_selectedSeats.isEmpty) return 'No seat selected';
-    return _selectedSeats.map((s) => s.id).join(', ');
+    return _selectedSeats.map((s) => s.seatNumber).join(', ');
   }
 
   String get formattedCountdown {
@@ -182,15 +169,11 @@ class BookingProvider extends ChangeNotifier {
     }
   }
 
-//logika untuk update pilihan user, misal user pilih cinema, maka date dan time harus di reset 
-//karena bisa jadi date dan time sebelumnya tidak sesuai dengan cinema yang baru dipilih user, 
-//? => adalah represent dari kondisi if. 
-
   void selectCinema(String cinema) {
     _selectedCinema = cinema;
-    _selectedDate = dates.isNotEmpty ? dates[0] : ""; //artinya data yg dipilih akan masuk ke _selectedDate, tapi jika data tidak ada maka _selectedDate akan diisi dengan string kosong
+    _selectedDate = dates.isNotEmpty ? dates[0] : ""; 
     _selectedTime = times.isNotEmpty ? times[0] : "";
-    notifyListeners(); //ngasitau ui kalo ada update data
+    notifyListeners(); 
   }
 
   void selectDate(String date) {
@@ -214,8 +197,6 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-// Logika untuk timer pembayaran, jika waktu habis maka booking akan dibatalkan dan data yang sudah dipilih akan di reset, 
-//dan user harus memulai booking dari awal lagi jika ingin melakukan booking
   void startPaymentTimer(VoidCallback onTimeoutCallback) {
     _timer?.cancel();
     _remainingSeconds = 100;
@@ -223,14 +204,41 @@ class BookingProvider extends ChangeNotifier {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds <= 1) {
         _remainingSeconds = 0;
-        _isTimeout = true; //tanda waktu habis agar tidak menghitung mundur lagi
+        _isTimeout = true; 
         _timer?.cancel();
         notifyListeners();
-        onTimeoutCallback(); //pop up dialog timeout akan muncul setelah waktu habis
+        onTimeoutCallback(); 
       }
       _remainingSeconds--;
       notifyListeners();
     });
+  }
+
+  Future<void> createBooking({
+    required int scheduleId,
+    required List<int> seatIds,
+    required String paymentMethod,
+    required String token,
+  }) async {
+    final url = Uri.parse('http://127.0.0.1:3000/api/v1/booking'); 
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'schedule_id': scheduleId,
+        'seat_ids': seatIds,
+        'payment_method': paymentMethod,
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Gagal menyimpan ke database');
+    }
   }
 
   Booking completePayment() {
@@ -240,7 +248,7 @@ class BookingProvider extends ChangeNotifier {
       cinema: _selectedCinema,
       date: _selectedDate,
       time: _selectedTime,
-      seats: _selectedSeats.map((s) => s.id).toList(),
+      seats: _selectedSeats.map((s) => s.seatNumber).toList(),
       totalPrice: totalPrice.toDouble(),
       status: 'Success',
     );

@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // 🟢 Tambahan wajib untuk kIsWeb
+import 'package:flutter/foundation.dart'; 
 import 'package:flutter/material.dart';
 import '../../data/models/movie.dart';
 import '../../utils/constants.dart';
@@ -28,16 +28,20 @@ class OrderSummaryCard extends StatelessWidget {
 
   String get _formattedSeats => seats.join(', ');
 
-  // 🟢 FUNGSI BARU: Deteksi URL otomatis biar gak nge-hang di Web/Emulator
   String _getImageUrl(String path) {
     if (path.isEmpty) return '';
-    if (path.startsWith('http')) return path;
 
-    // Bersihkan slash di awal agar tidak terjadi double slash (//)
-    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    String safePath = path.replaceAll('\\', '/');
 
-    // Gunakan localhost untuk Web/Desktop, dan 10.0.2.2 untuk Emulator Android
-    final baseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+    if (safePath.startsWith('http')) return safePath;
+
+    final cleanPath = safePath.startsWith('/') ? safePath.substring(1) : safePath;
+
+    String baseUrl = 'http://127.0.0.1:3000';
+    
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      baseUrl = 'http://10.0.2.2:3000';
+    }
 
     return '$baseUrl/$cleanPath';
   }
@@ -49,7 +53,6 @@ class OrderSummaryCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🟢 Widget Gambar yang sudah disempurnakan
           ClipRRect(
             borderRadius: BorderRadius.circular(8.0),
             child: Image.network(

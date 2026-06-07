@@ -2,7 +2,7 @@ enum SeatStatus { available, booked, selected }
 
 class Seat {
   final String id; 
-  final String seatNumber; // "A1", "A2", dll
+  final String seatNumber;
   final SeatStatus status;
 
   const Seat({
@@ -21,7 +21,6 @@ class Seat {
 
   bool get isSelectable => status != SeatStatus.booked;
 
-  // 🟢 FUNGSI BARU: Mengubah JSON Golang menjadi Objek Dart
   factory Seat.fromJson(Map<String, dynamic> json) {
     String parseId(dynamic v) {
       if (v == null) return '';
