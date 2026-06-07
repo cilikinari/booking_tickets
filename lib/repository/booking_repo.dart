@@ -7,6 +7,8 @@ class BookingRepository {
   final BookingService _bookingService = BookingService();
 
   Future<List<Schedule>> getSchedules() => _bookingService.fetchAllSchedules();
+  //ini dipake buat nanti di invoice, jadi ngambil berdasarkan id
+  Future<Schedule> getScheduleById(int id) => _bookingService.fetchScheduleById(id);
   
   Future<List<Studio>> getStudios() => _bookingService.fetchAllStudios();
 

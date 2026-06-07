@@ -35,6 +35,25 @@ class BookingService {
     }
   }
 
+    // 2. FUNGSI AMBIL JADWAL BY ID
+  Future<Schedule> fetchScheduleById(int id) async {
+    final url = Uri.parse('$_baseUrl/schedule/$id');
+    try {
+      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final dynamic decodedData = json.decode(response.body);
+        final mapData = (decodedData is Map && decodedData.containsKey('data'))
+            ? decodedData['data']
+            : decodedData;
+        return Schedule.fromJson(mapData);
+      } else {
+        throw Exception('Server error: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Gagal memuat jadwal berdasarkan ID: $e');
+    }
+  }
+
   // 3. FUNGSI AMBIL DATA STUDIO (NAMA BIOSKOP)
   Future<List<Studio>> fetchAllStudios() async {
     final url = Uri.parse('$_baseUrl/studio');
