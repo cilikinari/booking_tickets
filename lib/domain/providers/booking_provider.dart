@@ -1,7 +1,7 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'dart:async';
 import '../../data/models/movie.dart';
 import '../../data/models/seat.dart';
 import '../../data/models/booking.dart';
@@ -11,6 +11,8 @@ import '../../data/models/cinema.dart';
 import '../../repository/booking_repo.dart';
 
 class BookingProvider extends ChangeNotifier {
+  static const String _baseUrl = 'http://127.0.0.1:3000/api/v1';
+
   final BookingRepository _repository = BookingRepository();
 
   List<Schedule> _allSchedules = [];
@@ -21,12 +23,12 @@ class BookingProvider extends ChangeNotifier {
   String _errorMessage = '';
 
   Movie? _activeMovie;
-  String _selectedCinema = ""; 
-  String _selectedDate = "";
-  String _selectedTime = "";
+  String _selectedCinema = '';
+  String _selectedDate = '';
+  String _selectedTime = '';
   List<Seat> _selectedSeats = [];
   String _selectedPayment = '';
-  int _remainingSeconds = 100;
+  int _remainingSeconds = 300;
   Timer? _timer;
   bool _isTimeout = false;
 
@@ -35,7 +37,6 @@ class BookingProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   String get selectedPayment => _selectedPayment;
-  int get remainingSeconds => _remainingSeconds;
   bool get isTimeout => _isTimeout;
   bool get canPay => _selectedPayment.isNotEmpty;
   int get totalPrice => _selectedSeats.length * ticketPrice;
@@ -43,18 +44,32 @@ class BookingProvider extends ChangeNotifier {
   String get selectedDate => _selectedDate;
   String get selectedTime => _selectedTime;
 
-  String _getCombinedName(int studioId) {
-    final studio = _allStudios.firstWhere(
-      (st) => st.id == studioId,
-      orElse: () => Studio(id: 0, cinemaId: 0, studioName: ''),
-    );
-    final cinema = _allCinemas.firstWhere(
-      (c) => c.id == studio.cinemaId,
-      orElse: () => Cinema(id: 0, name: ''),
-    );
+  String get formattedCountdown {
+    final m = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final s = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
 
-    if (cinema.name.isEmpty) return studio.studioName;
-    return "${cinema.name} - ${studio.studioName}"; 
+  String get selectedLabels {
+    if (_selectedSeats.isEmpty) return 'No seat selected';
+    return _selectedSeats.map((s) => s.seatNumber).join(', ');
+  }
+
+  int get selectedScheduleId {
+    try {
+      return _findCurrentSchedule().id;
+    } catch (_) {
+      return -1;
+    }
+  }
+
+  int get ticketPrice {
+    if (_allSchedules.isEmpty || _selectedCinema.isEmpty) return 0;
+    try {
+      return _findCurrentSchedule().price;
+    } catch (_) {
+      return 0;
+    }
   }
 
   List<String> get cinemas {
@@ -68,10 +83,9 @@ class BookingProvider extends ChangeNotifier {
   List<String> get dates {
     if (_selectedCinema.isEmpty) return [];
     return _allSchedules
-        .where((s) {
-          if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
-          return _getCombinedName(s.studioId) == _selectedCinema;
-        })
+        .where((s) =>
+            s.movieId.toString() == _activeMovie?.id.toString() &&
+            _getCombinedName(s.studioId) == _selectedCinema)
         .map((s) => s.date)
         .toSet()
         .toList();
@@ -80,105 +94,52 @@ class BookingProvider extends ChangeNotifier {
   List<String> get times {
     if (_selectedCinema.isEmpty || _selectedDate.isEmpty) return [];
     return _allSchedules
-        .where((s) {
-          if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
-          if (s.date != _selectedDate) return false;
-          return _getCombinedName(s.studioId) == _selectedCinema;
-        })
+        .where((s) =>
+            s.movieId.toString() == _activeMovie?.id.toString() &&
+            s.date == _selectedDate &&
+            _getCombinedName(s.studioId) == _selectedCinema)
         .map((s) => s.time)
         .toSet()
         .toList();
   }
 
-  int get ticketPrice {
-    if (_allSchedules.isEmpty || _selectedCinema.isEmpty) return 0;
-    try {
-      final currentSchedule = _allSchedules.firstWhere((s) {
-        if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
-        if (s.date != _selectedDate) return false;
-        if (s.time != _selectedTime) return false;
-        return _getCombinedName(s.studioId) == _selectedCinema;
-      });
-      return currentSchedule.price;
-    } catch (e) {
-      return 0;
-    }
+  String _getCombinedName(int studioId) {
+    final studio = _allStudios.firstWhere(
+      (st) => st.id == studioId,
+      orElse: () => Studio(id: 0, cinemaId: 0, studioName: ''),
+    );
+    final cinema = _allCinemas.firstWhere(
+      (c) => c.id == studio.cinemaId,
+      orElse: () => Cinema(id: 0, name: ''),
+    );
+    return cinema.name.isEmpty
+        ? studio.studioName
+        : '${cinema.name} - ${studio.studioName}';
   }
 
-  int get selectedScheduleId {
-    try {
-      final currentSchedule = _allSchedules.firstWhere((s) {
-        if (s.movieId.toString() != _activeMovie?.id.toString()) return false;
-        if (s.date != _selectedDate) return false;
-        if (s.time != _selectedTime) return false;
-        return _getCombinedName(s.studioId) == _selectedCinema;
-      });
-      return currentSchedule.id;
-    } catch (e) {
-      return -1;
-    }
+  Schedule _findCurrentSchedule() {
+    return _allSchedules.firstWhere((s) =>
+        s.movieId.toString() == _activeMovie?.id.toString() &&
+        s.date == _selectedDate &&
+        s.time == _selectedTime &&
+        _getCombinedName(s.studioId) == _selectedCinema);
   }
 
-  String get selectedLabels {
-    if (_selectedSeats.isEmpty) return 'No seat selected';
-    return _selectedSeats.map((s) => s.seatNumber).join(', ');
-  }
-
-  String get formattedCountdown {
-    final m = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
-    final s = (_remainingSeconds % 60).toString().padLeft(2, '0');
-    return '$m:$s';
-  }
-
-  Future<void> startBooking(Movie movie) async {
-    _activeMovie = movie;
-    _selectedCinema = "";
-    _selectedDate = "";
-    _selectedTime = "";
-    _selectedSeats = [];
-    _selectedPayment = '';
-    _isTimeout = false;
-    _remainingSeconds = 300;
-    _timer?.cancel();
-
-    _isLoading = true;
-    _errorMessage = '';
-    notifyListeners();
-
-    try {
-      await Future.wait([
-        _repository.getSchedules().then((value) => _allSchedules = value),
-        _repository.getStudios().then((value) => _allStudios = value),
-        _repository.getCinemas().then((value) => _allCinemas = value),
-      ]);
-
-      if (cinemas.isNotEmpty) {
-        _selectedCinema = cinemas[0];
-        if (dates.isNotEmpty) {
-          _selectedDate = dates[0];
-          if (times.isNotEmpty) {
-            _selectedTime = times[0];
-          }
-        }
-      }
-    } catch (e) {
-      _errorMessage = e.toString().replaceAll('Exception: ', '');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  Map<String, String> _authHeaders(String token) => {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      };
 
   void selectCinema(String cinema) {
     _selectedCinema = cinema;
-    _selectedDate = dates.isNotEmpty ? dates[0] : ""; 
-    _selectedTime = times.isNotEmpty ? times[0] : "";
-    notifyListeners(); 
+    _selectedDate = dates.isNotEmpty ? dates[0] : '';
+    _selectedTime = times.isNotEmpty ? times[0] : '';
+    notifyListeners();
   }
 
   void selectDate(String date) {
     _selectedDate = date;
-    _selectedTime = times.isNotEmpty ? times[0] : "";
+    _selectedTime = times.isNotEmpty ? times[0] : '';
     notifyListeners();
   }
 
@@ -197,38 +158,71 @@ class BookingProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void startPaymentTimer(VoidCallback onTimeoutCallback) {
+  void stopTimer() => _timer?.cancel();
+
+  Future<void> startBooking(Movie movie) async {
+    _activeMovie = movie;
+    _selectedCinema = '';
+    _selectedDate = '';
+    _selectedTime = '';
+    _selectedSeats = [];
+    _selectedPayment = '';
+    _isTimeout = false;
+    _remainingSeconds = 300;
+    _timer?.cancel();
+    _isLoading = true;
+    _errorMessage = '';
+    notifyListeners();
+
+    try {
+      await Future.wait([
+        _repository.getSchedules().then((v) => _allSchedules = v),
+        _repository.getStudios().then((v) => _allStudios = v),
+        _repository.getCinemas().then((v) => _allCinemas = v),
+      ]);
+
+      if (cinemas.isNotEmpty) {
+        _selectedCinema = cinemas[0];
+        if (dates.isNotEmpty) {
+          _selectedDate = dates[0];
+          if (times.isNotEmpty) _selectedTime = times[0];
+        }
+      }
+    } catch (e) {
+      _errorMessage = e.toString().replaceAll('Exception: ', '');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  void startPaymentTimer(VoidCallback onTimeout) {
     _timer?.cancel();
     _remainingSeconds = 300;
     _isTimeout = false;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds <= 1) {
         _remainingSeconds = 0;
-        _isTimeout = true; 
-        _timer?.cancel();
+        _isTimeout = true;
+        timer.cancel();
         notifyListeners();
-        onTimeoutCallback(); 
+        onTimeout();
+        return;
       }
       _remainingSeconds--;
       notifyListeners();
     });
   }
 
-  // Ubah createBooking agar return booking ID
   Future<String> createBooking({
     required int scheduleId,
     required List<int> seatIds,
     required String paymentMethod,
     required String token,
   }) async {
-    final url = Uri.parse('http://127.0.0.1:3000/api/v1/booking');
-
     final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$_baseUrl/booking'),
+      headers: _authHeaders(token),
       body: jsonEncode({
         'schedule_id': scheduleId,
         'seat_ids': seatIds,
@@ -237,29 +231,21 @@ class BookingProvider extends ChangeNotifier {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final errorData = jsonDecode(response.body);
-      throw Exception(errorData['message'] ?? 'Gagal menyimpan ke database');
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Gagal menyimpan ke database');
     }
 
-    // Ambil booking_id dari response
-    final responseData = jsonDecode(response.body);
-    return responseData['id'] as String; // UUID dari backend
+    return jsonDecode(response.body)['id'] as String;
   }
 
-  // Tambah fungsi baru untuk proses payment
   Future<void> processPayment({
     required String bookingId,
     required String paymentMethod,
     required String token,
   }) async {
-    final url = Uri.parse('http://127.0.0.1:3000/api/v1/payment');
-
     final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      Uri.parse('$_baseUrl/payment'),
+      headers: _authHeaders(token),
       body: jsonEncode({
         'booking_id': bookingId,
         'payment_method': paymentMethod,
@@ -267,8 +253,8 @@ class BookingProvider extends ChangeNotifier {
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
-      final errorData = jsonDecode(response.body);
-      throw Exception(errorData['message'] ?? 'Gagal memproses pembayaran');
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Gagal memproses pembayaran');
     }
   }
 
@@ -283,10 +269,6 @@ class BookingProvider extends ChangeNotifier {
       totalPrice: totalPrice.toDouble(),
       status: 'Success',
     );
-  }
-
-  void stopTimer() {
-    _timer?.cancel();
   }
 
   @override

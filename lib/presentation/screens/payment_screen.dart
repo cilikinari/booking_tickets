@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -22,49 +21,35 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   bool _isTimeoutDialogVisible = false;
-  
-  BookingProvider? _bookingProvider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<BookingProvider>(context, listen: false);
-      _bookingProvider = provider;
-      provider.startPaymentTimer(() {
-        _showTimeoutDialog();
-      });
+      Provider.of<BookingProvider>(context, listen: false)
+          .startPaymentTimer(_showTimeoutDialog);
     });
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _bookingProvider = Provider.of<BookingProvider>(context, listen: false);
-  }
-
-  @override
   void dispose() {
-    _bookingProvider?.stopTimer();
+    Provider.of<BookingProvider>(context, listen: false).stopTimer();
     super.dispose();
   }
 
   Future<void> _showTimeoutDialog() async {
     if (_isTimeoutDialogVisible || !mounted) return;
     _isTimeoutDialogVisible = true;
-
     try {
       await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (dialogContext) {
-          return TimeoutDialog(
-            onGotIt: () {
-              Navigator.of(dialogContext).pop();
-              _goHome();
-            },
-          );
-        },
+        builder: (dialogContext) => TimeoutDialog(
+          onGotIt: () {
+            Navigator.of(dialogContext).pop();
+            _goHome();
+          },
+        ),
       );
     } finally {
       _isTimeoutDialogVisible = false;
@@ -79,11 +64,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-    Future<void> _onPayNow(BookingProvider provider) async {
-    if (!provider.canPay) return;
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final token = authProvider.token;
+  Future<void> _onPayNow(BookingProvider provider) async {
+    final token =
+        Provider.of<AuthProvider>(context, listen: false).token;
 
     if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -92,73 +75,65 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
-    final List<int> selectedSeatIds = provider.selectedSeats
-        .map((s) => int.parse(s.id.toString()))
-        .toList();
-
-    final int safeScheduleId = int.parse(provider.selectedScheduleId.toString());
+    final seatIds =
+        provider.selectedSeats.map((s) => int.parse(s.id.toString())).toList();
+    final scheduleId = int.parse(provider.selectedScheduleId.toString());
+    final paymentMethod = provider.selectedPayment;
 
     try {
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (_) => const Center(
-            child: CircularProgressIndicator(color: AppConstants.primaryColor)),
+          child: CircularProgressIndicator(color: AppConstants.primaryColor),
+        ),
       );
 
-      // Step 1: Buat booking → dapat booking_id
-      final String bookingId = await provider.createBooking(
-        scheduleId: safeScheduleId,
-        seatIds: selectedSeatIds,
-        paymentMethod: provider.selectedPayment ?? 'Dana',
+      final bookingId = await provider.createBooking(
+        scheduleId: scheduleId,
+        seatIds: seatIds,
+        paymentMethod: paymentMethod,
         token: token,
       );
 
-      // Step 2: Proses payment → update status jadi 'success'
       await provider.processPayment(
         bookingId: bookingId,
-        paymentMethod: provider.selectedPayment ?? 'Dana',
+        paymentMethod: paymentMethod,
         token: token,
       );
 
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      Navigator.pop(context); // tutup loading
 
       final Booking finalBooking = provider.completePayment();
-
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => SuccessScreen(booking: finalBooking)),
-        );
-      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => SuccessScreen(booking: finalBooking)),
+      );
     } catch (e) {
-      if (mounted) Navigator.pop(context);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal membuat pesanan: $e'), backgroundColor: Colors.red),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pop(context); // tutup loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal membuat pesanan: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  ScrollPhysics get _scrollPhysics =>
-      kIsWeb ? const ClampingScrollPhysics() : const BouncingScrollPhysics();
-
   @override
   Widget build(BuildContext context) {
-    final bookingProvider = Provider.of<BookingProvider>(context);
-    final movie = bookingProvider.activeMovie;
+    final provider = Provider.of<BookingProvider>(context);
 
-    if (movie == null) {
+    if (provider.activeMovie == null) {
       return const Scaffold(
         backgroundColor: AppConstants.backgroundColor,
         body: Center(child: Text('No active booking')),
       );
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isWide = screenWidth > 900;
-    final horizontalPadding = isWide ? AppConstants.padding : 16.0;
+    final isWide = MediaQuery.of(context).size.width > 900;
 
     return Scaffold(
       backgroundColor: AppConstants.backgroundColor,
@@ -181,25 +156,41 @@ class _PaymentScreenState extends State<PaymentScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
             child: SingleChildScrollView(
-              physics: _scrollPhysics,
+              physics: kIsWeb
+                  ? const ClampingScrollPhysics()
+                  : const BouncingScrollPhysics(),
               padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
+                horizontal: isWide ? AppConstants.padding : 16.0,
                 vertical: 16,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   isWide
-                      ? _buildDesktopLayout(bookingProvider)
-                      : _buildMobileLayout(bookingProvider),
+                      ? _buildDesktopLayout(provider)
+                      : _buildMobileLayout(provider),
                   const SizedBox(height: 32),
-                  _buildPayButton(isWide, bookingProvider),
+                  _buildPayButton(isWide, provider),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildOrderSummary(BookingProvider provider,
+      {required double posterHeight, required double posterWidth}) {
+    return OrderSummaryCard(
+      movie: provider.activeMovie!,
+      cinema: provider.selectedCinema,
+      date: provider.selectedDate,
+      time: provider.selectedTime,
+      seats: provider.selectedSeats.map((s) => s.seatNumber).toList(),
+      totalPrice: provider.totalPrice.toDouble(),
+      posterHeight: posterHeight,
+      posterWidth: posterWidth,
     );
   }
 
@@ -217,8 +208,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 flex: 5,
                 child: PaymentMethodsCard(
                   selectedPayment: provider.selectedPayment,
-                  onMethodSelected: (method) =>
-                      provider.selectPaymentMethod(method),
+                  onMethodSelected: provider.selectPaymentMethod,
                 ),
               ),
               const SizedBox(width: 48),
@@ -226,16 +216,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 flex: 4,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 42),
-                  child: OrderSummaryCard(
-                    movie: provider.activeMovie!,
-                    cinema: provider.selectedCinema,
-                    date: provider.selectedDate,
-                    time: provider.selectedTime,
-                    seats: provider.selectedSeats.map((s) => s.seatNumber).toList(),
-                    totalPrice: provider.totalPrice.toDouble(),
-                    posterHeight: 280,
-                    posterWidth: 180,
-                  ),
+                  child: _buildOrderSummary(provider,
+                      posterHeight: 280, posterWidth: 180),
                 ),
               ),
             ],
@@ -251,20 +233,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
       children: [
         CountdownBanner(formattedCountdown: provider.formattedCountdown),
         const SizedBox(height: 20),
-        OrderSummaryCard(
-          movie: provider.activeMovie!,
-          cinema: provider.selectedCinema,
-          date: provider.selectedDate,
-          time: provider.selectedTime,
-          seats: provider.selectedSeats.map((s) => s.seatNumber).toList(),
-          totalPrice: provider.totalPrice.toDouble(),
-          posterHeight: 170,
-          posterWidth: 120,
-        ),
+        _buildOrderSummary(provider, posterHeight: 170, posterWidth: 120),
         const SizedBox(height: 28),
         PaymentMethodsCard(
           selectedPayment: provider.selectedPayment,
-          onMethodSelected: (method) => provider.selectPaymentMethod(method),
+          onMethodSelected: provider.selectPaymentMethod,
         ),
       ],
     );
@@ -279,7 +252,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppConstants.primaryColor,
-            disabledBackgroundColor: AppConstants.primaryColor.withOpacity(0.45),
+            disabledBackgroundColor:
+                AppConstants.primaryColor.withOpacity(0.45),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(32),
             ),
