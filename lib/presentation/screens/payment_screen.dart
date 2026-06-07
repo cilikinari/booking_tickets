@@ -79,10 +79,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Future<void> _onPayNow(BookingProvider provider) async {
+    Future<void> _onPayNow(BookingProvider provider) async {
     if (!provider.canPay) return;
 
-    // 1. Ambil Token
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
 
@@ -107,9 +106,17 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: CircularProgressIndicator(color: AppConstants.primaryColor)),
       );
 
-      await provider.createBooking(
+      // Step 1: Buat booking → dapat booking_id
+      final String bookingId = await provider.createBooking(
         scheduleId: safeScheduleId,
         seatIds: selectedSeatIds,
+        paymentMethod: provider.selectedPayment ?? 'Dana',
+        token: token,
+      );
+
+      // Step 2: Proses payment → update status jadi 'success'
+      await provider.processPayment(
+        bookingId: bookingId,
         paymentMethod: provider.selectedPayment ?? 'Dana',
         token: token,
       );

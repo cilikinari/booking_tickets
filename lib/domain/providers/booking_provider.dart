@@ -214,13 +214,14 @@ class BookingProvider extends ChangeNotifier {
     });
   }
 
-  Future<void> createBooking({
+  // Ubah createBooking agar return booking ID
+  Future<String> createBooking({
     required int scheduleId,
     required List<int> seatIds,
     required String paymentMethod,
     required String token,
   }) async {
-    final url = Uri.parse('http://127.0.0.1:3000/api/v1/booking'); 
+    final url = Uri.parse('http://127.0.0.1:3000/api/v1/booking');
 
     final response = await http.post(
       url,
@@ -238,6 +239,36 @@ class BookingProvider extends ChangeNotifier {
     if (response.statusCode != 200 && response.statusCode != 201) {
       final errorData = jsonDecode(response.body);
       throw Exception(errorData['message'] ?? 'Gagal menyimpan ke database');
+    }
+
+    // Ambil booking_id dari response
+    final responseData = jsonDecode(response.body);
+    return responseData['id'] as String; // UUID dari backend
+  }
+
+  // Tambah fungsi baru untuk proses payment
+  Future<void> processPayment({
+    required String bookingId,
+    required String paymentMethod,
+    required String token,
+  }) async {
+    final url = Uri.parse('http://127.0.0.1:3000/api/v1/payment');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'booking_id': bookingId,
+        'payment_method': paymentMethod,
+      }),
+    );
+
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['message'] ?? 'Gagal memproses pembayaran');
     }
   }
 
