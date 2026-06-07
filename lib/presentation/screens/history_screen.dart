@@ -1,22 +1,41 @@
-import 'package:flutter/foundation.dart'; // 🟢 TAMBAHAN WAJIB UNTUK DETEKSI WEB
+import 'package:flutter/foundation.dart'; 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/booking.dart';
 import '../../data/models/movie.dart';
 import '../../domain/providers/history_provider.dart';
 import '../../domain/providers/movie_provider.dart';
+import '../../domain/providers/auth_provider.dart';
 import '../widgets/bottom_nav.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final token = authProvider.token;
+
+      if (token != null) {
+        Provider.of<HistoryProvider>(context, listen: false).fetchHistory(token);
+      }
+    });
+  }
 
   Movie? _getMovieByTitle(String title, MovieProvider movieProvider) {
     try {
-      // 🟢 Pastikan menyisir variabel topMovies dan nowPlaying yang baru dari API
       final allMovies = [
         ...movieProvider.topMovies,
         ...movieProvider.nowPlaying,
@@ -27,13 +46,18 @@ class HistoryScreen extends StatelessWidget {
     }
   }
 
-  // 🟢 FUNGSI HELPER BARU: Deteksi URL otomatis biar gak nge-hang di Web/Emulator
   String _getImageUrl(String path) {
     if (path.isEmpty) return '';
-    if (path.startsWith('http')) return path;
+    
+    String safePath = path.replaceAll('\\', '/');
+    if (safePath.startsWith('http')) return safePath;
 
-    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    final baseUrl = kIsWeb ? 'http://localhost:3000' : 'http://10.0.2.2:3000';
+    final cleanPath = safePath.startsWith('/') ? safePath.substring(1) : safePath;
+    
+    String baseUrl = 'http://127.0.0.1:3000'; 
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      baseUrl = 'http://10.0.2.2:3000';
+    }
 
     return '$baseUrl/$cleanPath';
   }
@@ -65,7 +89,7 @@ class HistoryScreen extends StatelessWidget {
             case 1:
               break;
             case 2:
-              Navigator.push(
+              Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (_) => const ProfileScreen()),
               );
@@ -77,67 +101,47 @@ class HistoryScreen extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: horizontalPadding,
-                vertical: 20,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
               child: Stack(
                 alignment: Alignment.center,
-                children: [
-                  const Align(
+                children: const [
+                  Align(
                     alignment: Alignment.centerLeft,
                     child: BackButton(color: Colors.white),
                   ),
-                  const Text(
+                  Text(
                     'History',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
             ),
             Expanded(
-              child: bookings.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No booking history',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
-                          fontSize: 16,
-                        ),
-                      ),
-                    )
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: horizontalPadding,
-                        vertical: 16,
-                      ),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxWidth: AppConstants.maxWidth,
+              child: historyProvider.isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppConstants.primaryColor))
+                  : bookings.isEmpty
+                      ? Center(
+                          child: Text(
+                            'No booking history',
+                            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 16),
                           ),
-                          child: Column(
-                            children: [
-                              ...bookings.map((booking) {
-                                final movie = _getMovieByTitle(
-                                  booking.movieTitle,
-                                  movieProvider,
-                                );
-                                return _buildBookingCard(
-                                  booking,
-                                  movie,
-                                  isWide,
-                                );
-                              }),
-                            ],
+                        )
+                      : SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
+                              child: Column(
+                                children: [
+                                  ...bookings.map((booking) {
+                                    final movie = _getMovieByTitle(booking.movieTitle, movieProvider);
+                                    return _buildBookingCard(booking, movie, isWide);
+                                  }),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
             ),
           ],
         ),
@@ -153,9 +157,7 @@ class HistoryScreen extends StatelessWidget {
         color: AppConstants.cardColor,
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
       ),
-      child: isWide
-          ? _buildWideLayout(booking, movie)
-          : _buildMobileLayout(booking, movie),
+      child: isWide ? _buildWideLayout(booking, movie) : _buildMobileLayout(booking, movie),
     );
   }
 
@@ -206,7 +208,6 @@ class HistoryScreen extends StatelessWidget {
       return ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Image.network(
-          // 🟢 GUNAKAN HELPER _getImageUrl DI SINI
           _getImageUrl(movie.posterUrl),
           width: w,
           height: h,
@@ -239,20 +240,13 @@ class HistoryScreen extends StatelessWidget {
       children: [
         Text(
           booking.movieTitle,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         if (movie != null) ...[
           const SizedBox(height: 4),
           Text(
             movie.genres.map((g) => g.name).join(', '),
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
           ),
         ],
         const SizedBox(height: 12),
@@ -269,11 +263,7 @@ class HistoryScreen extends StatelessWidget {
           ),
           child: Text(
             'Rp ${AppHelpers.formatNumber(booking.totalPrice)}',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ),
       ],
@@ -287,19 +277,12 @@ class HistoryScreen extends StatelessWidget {
         children: [
           Text(
             '$label ',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
-              fontSize: 13,
-            ),
+            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
           ),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+              style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -308,10 +291,14 @@ class HistoryScreen extends StatelessWidget {
   }
 
   Widget _buildActionButton(Booking booking) {
+    Color statusColor = Colors.lightBlue;
+    if (booking.status.toLowerCase() == 'success') statusColor = Colors.green;
+    if (booking.status.toLowerCase() == 'expired') statusColor = Colors.red;
+
     return Text(
-      booking.status,
-      style: const TextStyle(
-        color: Colors.lightBlue,
+      booking.status.toUpperCase(),
+      style: TextStyle(
+        color: statusColor,
         fontSize: 14,
         fontWeight: FontWeight.bold,
       ),

@@ -138,7 +138,7 @@ class BookingProvider extends ChangeNotifier {
     _selectedSeats = [];
     _selectedPayment = '';
     _isTimeout = false;
-    _remainingSeconds = 100;
+    _remainingSeconds = 300;
     _timer?.cancel();
 
     _isLoading = true;
@@ -199,7 +199,7 @@ class BookingProvider extends ChangeNotifier {
 
   void startPaymentTimer(VoidCallback onTimeoutCallback) {
     _timer?.cancel();
-    _remainingSeconds = 100;
+    _remainingSeconds = 300;
     _isTimeout = false;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds <= 1) {

@@ -5,7 +5,7 @@ class Booking {
   final String time;
   final List<String> seats;
   final double totalPrice;
-  final String status; 
+  final String status;
 
   Booking({
     required this.movieTitle,
@@ -16,7 +16,20 @@ class Booking {
     required this.totalPrice,
     required this.status,
   });
-}
 
-//ini untuk menyimpan data booking yang sudah dilakukan, 
-//bisa digunakan untuk menampilkan riwayat booking atau detail booking yang sedang berlangsung.
+  factory Booking.fromJson(Map<String, dynamic> json) {
+    return Booking(
+      movieTitle: json['film_title'] ?? json['movie_title'] ?? 'Unknown Movie',
+      
+      cinema: json['cinema_name'] ?? json['cinema'] ?? 'Unknown Cinema',
+      
+      date: (json['date'] ?? json['booking_date'] ?? '-').toString().split('T')[0],
+      time: json['time'] ?? '-',
+      seats: json['seats'] != null
+          ? List<String>.from(json['seats'].map((x) => x.toString()))
+          : [],
+      totalPrice: (json['total_price'] ?? 0).toDouble(),
+      status: json['status'] ?? 'unknown',
+    );
+  }
+}
