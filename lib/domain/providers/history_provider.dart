@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../../data/models/booking.dart';
+import '../../data/datasources/auth_services.dart'; // 🟢 Pakai AuthServices
 
 class HistoryProvider extends ChangeNotifier {
   List<Booking> _bookingHistory = [];
@@ -12,13 +13,14 @@ class HistoryProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
 
+  // 🟢 FUNGSI TARIK DATA DARI GOLANG (Jangan sampai hilang lagi ya! 🤣)
   Future<void> fetchHistory(String token) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      final url = Uri.parse('http://127.0.0.1:3000/api/v1/booking/my-history');
+      final url = Uri.parse('${AuthServices.baseUrl}/booking/my-history');
 
       final response = await http.get(
         url,

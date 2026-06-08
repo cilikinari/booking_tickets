@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/movie.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
+import '../../data/datasources/auth_services.dart';
 
 class OrderSummaryCard extends StatelessWidget {
   final Movie movie;
@@ -30,18 +31,11 @@ class OrderSummaryCard extends StatelessWidget {
 
   String _getImageUrl(String path) {
     if (path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
 
-    String safePath = path.replaceAll('\\', '/');
-
-    if (safePath.startsWith('http')) return safePath;
-
-    final cleanPath = safePath.startsWith('/') ? safePath.substring(1) : safePath;
-
-    String baseUrl = 'http://127.0.0.1:3000';
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
     
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      baseUrl = 'http://10.0.2.2:3000';
-    }
+    final baseUrl = AuthServices.baseUrl.replaceAll('/api/v1', '');
 
     return '$baseUrl/$cleanPath';
   }

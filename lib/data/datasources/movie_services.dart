@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/movie.dart'; 
+import 'auth_services.dart'; 
 
 class MovieService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1'; 
 
   Future<List<Movie>> fetchNowShowing() async {
-    final url = Uri.parse('$_baseUrl/film');
-    print("1. MENCOBA HIT API: $url"); // JEBAKAN 1
+    final url = Uri.parse('${AuthServices.baseUrl}/film');
+    print("1. MENCOBA HIT API: $url"); 
 
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
@@ -28,7 +28,7 @@ class MovieService {
         throw Exception('Server merespon dengan kode: ${response.statusCode}');
       }
     } catch (e, stacktrace) {
-      print("🚨 FATAL ERROR: $e"); // TANGKAP ERROR DIAM-DIAM
+      print("🚨 FATAL ERROR: $e"); 
       print("🚨 STACKTRACE: $stacktrace");
       throw Exception('Terjadi kesalahan: $e');
     }

@@ -3,17 +3,12 @@ import 'package:http/http.dart' as http;
 import '../models/schedule.dart';
 import '../models/studio.dart';
 import '../models/cinema.dart';
+import 'auth_services.dart'; 
 
-// BookingService ini bertugas untuk melakukan request ke API dan mengembalikan data yang sudah diolah menjadi model.
-//disini digabungkan semua fungsi yang dibutuhkan untuk melakukan booking
 class BookingService {
-  static const String _baseUrl = 'http://localhost:3000/api/v1';
-
-  // 1.get all schedule and decode to list of Schedul.
-  //future and async use for waiting response from server and make app still responsive.
 
   Future<List<Schedule>> fetchAllSchedules() async {
-    final url = Uri.parse('$_baseUrl/schedule');
+    final url = Uri.parse('${AuthServices.baseUrl}/schedule');
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -35,10 +30,8 @@ class BookingService {
     }
   }
 
-
-  // 3. FUNGSI AMBIL DATA STUDIO (NAMA BIOSKOP)
   Future<List<Studio>> fetchAllStudios() async {
-    final url = Uri.parse('$_baseUrl/studio');
+    final url = Uri.parse('${AuthServices.baseUrl}/studio');
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {
@@ -60,9 +53,8 @@ class BookingService {
     }
   }
 
-  // 🟢 FUNGSI BARU UNTUK MENGAMBIL DATA CINEMA (BIOSKOP)
   Future<List<Cinema>> fetchAllCinemas() async {
-    final url = Uri.parse('$_baseUrl/cinema');
+    final url = Uri.parse('${AuthServices.baseUrl}/cinema');
     try {
       final response = await http.get(url).timeout(const Duration(seconds: 10));
       if (response.statusCode == 200) {

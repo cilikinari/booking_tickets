@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../data/models/booking.dart';
@@ -6,6 +6,7 @@ import '../../data/models/movie.dart';
 import '../../domain/providers/history_provider.dart';
 import '../../domain/providers/movie_provider.dart';
 import '../../domain/providers/auth_provider.dart';
+import '../../data/datasources/auth_services.dart';
 import '../widgets/bottom_nav.dart';
 import '../../utils/constants.dart';
 import '../../utils/helpers.dart';
@@ -20,10 +21,10 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-
   @override
   void initState() {
     super.initState();
+    // 🟢 Tembak API saat layar dibuka
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final token = authProvider.token;
@@ -48,16 +49,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _getImageUrl(String path) {
     if (path.isEmpty) return '';
-    
-    String safePath = path.replaceAll('\\', '/');
-    if (safePath.startsWith('http')) return safePath;
+    if (path.startsWith('http')) return path;
 
-    final cleanPath = safePath.startsWith('/') ? safePath.substring(1) : safePath;
-    
-    String baseUrl = 'http://127.0.0.1:3000'; 
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      baseUrl = 'http://10.0.2.2:3000';
-    }
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    final baseUrl = AuthServices.baseUrl.replaceAll('/api/v1', '');
 
     return '$baseUrl/$cleanPath';
   }
@@ -68,7 +63,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final movieProvider = Provider.of<MovieProvider>(context);
 
     final bookings = historyProvider.bookingHistory;
-
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWide = screenWidth > 900;
     final double horizontalPadding = isWide ? AppConstants.padding : 16.0;

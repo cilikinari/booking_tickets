@@ -21,19 +21,50 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   bool _isTimeoutDialogVisible = false;
+  
+  BookingProvider? _bookingProvider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<BookingProvider>(context, listen: false)
-          .startPaymentTimer(_showTimeoutDialog);
+      _initBookingLock(); 
     });
+  }
+
+  Future<void> _initBookingLock() async {
+    _bookingProvider = Provider.of<BookingProvider>(context, listen: false);
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+
+    if (token == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator(color: AppConstants.primaryColor)),
+    );
+
+    try {
+      await _bookingProvider!.lockSeats(token);
+      
+      if (!mounted) return;
+      Navigator.pop(context);
+      
+      _bookingProvider!.startPaymentTimer(_showTimeoutDialog);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Tutup loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+      );
+      Navigator.pop(context);
+    }
   }
 
   @override
   void dispose() {
-    Provider.of<BookingProvider>(context, listen: false).stopTimer();
+    // Matikan timer dengan aman
+    _bookingProvider?.stopTimer();
     super.dispose();
   }
 
@@ -65,8 +96,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _onPayNow(BookingProvider provider) async {
-    final token =
-        Provider.of<AuthProvider>(context, listen: false).token;
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
 
     if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,11 +104,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
       );
       return;
     }
-
-    final seatIds =
-        provider.selectedSeats.map((s) => int.parse(s.id.toString())).toList();
-    final scheduleId = int.parse(provider.selectedScheduleId.toString());
-    final paymentMethod = provider.selectedPayment;
 
     try {
       showDialog(
@@ -89,16 +114,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
       );
 
-      final bookingId = await provider.createBooking(
-        scheduleId: scheduleId,
-        seatIds: seatIds,
-        paymentMethod: paymentMethod,
-        token: token,
-      );
-
       await provider.processPayment(
-        bookingId: bookingId,
-        paymentMethod: paymentMethod,
+        bookingId: provider.currentBookingId!, // Ambil ID yang didapat dari lockSeats
+        paymentMethod: provider.selectedPayment,
         token: token,
       );
 
@@ -115,7 +133,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       Navigator.pop(context); // tutup loading
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal membuat pesanan: $e'),
+          content: Text('Gagal memproses pembayaran: $e'),
           backgroundColor: Colors.red,
         ),
       );

@@ -9,10 +9,9 @@ import '../../data/models/schedule.dart';
 import '../../data/models/studio.dart';
 import '../../data/models/cinema.dart';
 import '../../repository/booking_repo.dart';
+import '../../data/datasources/auth_services.dart'; 
 
 class BookingProvider extends ChangeNotifier {
-  static const String _baseUrl = 'http://127.0.0.1:3000/api/v1';
-
   final BookingRepository _repository = BookingRepository();
 
   List<Schedule> _allSchedules = [];
@@ -31,6 +30,7 @@ class BookingProvider extends ChangeNotifier {
   int _remainingSeconds = 300;
   Timer? _timer;
   bool _isTimeout = false;
+  String? currentBookingId;
 
   Movie? get activeMovie => _activeMovie;
   List<Seat> get selectedSeats => _selectedSeats;
@@ -169,6 +169,7 @@ class BookingProvider extends ChangeNotifier {
     _selectedPayment = '';
     _isTimeout = false;
     _remainingSeconds = 300;
+    currentBookingId = null;
     _timer?.cancel();
     _isLoading = true;
     _errorMessage = '';
@@ -214,28 +215,25 @@ class BookingProvider extends ChangeNotifier {
     });
   }
 
-  Future<String> createBooking({
-    required int scheduleId,
-    required List<int> seatIds,
-    required String paymentMethod,
-    required String token,
-  }) async {
+  Future<void> lockSeats(String token) async {
+    final seatIds = _selectedSeats.map((s) => int.parse(s.id.toString())).toList();
+    final scheduleId = selectedScheduleId;
+
     final response = await http.post(
-      Uri.parse('$_baseUrl/booking'),
+      Uri.parse('${AuthServices.baseUrl}/booking'),
       headers: _authHeaders(token),
       body: jsonEncode({
         'schedule_id': scheduleId,
         'seat_ids': seatIds,
-        'payment_method': paymentMethod,
       }),
     );
 
     if (response.statusCode != 200 && response.statusCode != 201) {
       final error = jsonDecode(response.body);
-      throw Exception(error['message'] ?? 'Gagal menyimpan ke database');
+      throw Exception(error['message'] ?? 'Gagal mengunci kursi');
     }
 
-    return jsonDecode(response.body)['id'] as String;
+    currentBookingId = jsonDecode(response.body)['id'] as String;
   }
 
   Future<void> processPayment({
@@ -244,7 +242,7 @@ class BookingProvider extends ChangeNotifier {
     required String token,
   }) async {
     final response = await http.post(
-      Uri.parse('$_baseUrl/payment'),
+      Uri.parse('${AuthServices.baseUrl}/payment'),
       headers: _authHeaders(token),
       body: jsonEncode({
         'booking_id': bookingId,
