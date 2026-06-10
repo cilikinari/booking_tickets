@@ -11,6 +11,7 @@ class AuthProvider extends ChangeNotifier {
   String? get token => _token;
 
   // Profile fields
+  String? currentUserId; // 🔥 Tambahkan ini untuk dipakai di WebSocket
   String? name;
   String? phone;
   String? emailUser;
@@ -20,6 +21,10 @@ class AuthProvider extends ChangeNotifier {
     if (_token == null) return;
     try {
       final data = await _authRepo.getProfile(_token!);
+      
+      // 🔥 Ambil ID dari backend (ubah ke String agar aman & cocok dengan WebSocket)
+      currentUserId = data['id']?.toString() ?? data['user_id']?.toString(); 
+      
       name = data['name'] ?? data['full_name'] ?? data['username'];
       phone = data['phone'] ?? data['phone_number'] ?? '-';
       emailUser = data['email'] ?? data['email_user'] ?? '-';
@@ -45,7 +50,7 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      throw e; 
+      rethrow; // 💡 Best practice Dart: gunakan rethrow, bukan throw e
     }
   }
 
@@ -61,7 +66,17 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      throw e;
+      rethrow; // 💡 Best practice Dart: gunakan rethrow
     }
+  }
+
+  // 💡 Opsional: Tambahkan fungsi logout untuk membersihkan data saat user keluar
+  void logout() {
+    _token = null;
+    currentUserId = null;
+    name = null;
+    phone = null;
+    emailUser = null;
+    notifyListeners();
   }
 }

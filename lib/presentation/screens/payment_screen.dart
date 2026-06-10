@@ -1,8 +1,10 @@
+import 'dart:async'; // Untuk StreamSubscription
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/providers/booking_provider.dart';
 import '../../domain/providers/auth_provider.dart';
+import '../../data/datasources/websocket_service.dart';
 import '../../data/models/booking.dart';
 import '../../utils/constants.dart';
 import '../widgets/countdown_banner.dart';
@@ -21,49 +23,138 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   bool _isTimeoutDialogVisible = false;
-  
+  bool _isProcessingPayment =
+      false; // 🔥 State untuk mengatur loading di tombol
+
   BookingProvider? _bookingProvider;
+
+  // WebSocket Service & Subscription
+  final WebSocketService _webSocketService = WebSocketService();
+  StreamSubscription? _wsSubscription;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initBookingLock(); 
+      _initBookingLock();
     });
   }
 
   Future<void> _initBookingLock() async {
     _bookingProvider = Provider.of<BookingProvider>(context, listen: false);
-    final token = Provider.of<AuthProvider>(context, listen: false).token;
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
 
     if (token == null) return;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator(color: AppConstants.primaryColor)),
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(color: AppConstants.primaryColor),
+      ),
     );
 
     try {
       await _bookingProvider!.lockSeats(token);
-      
+
       if (!mounted) return;
-      Navigator.pop(context);
-      
+      Navigator.pop(context); // Tutup loading dialog lock seats
+
+      // 🔥 Aktifkan WebSocket setelah kursi berhasil dikunci
+      _initWebSocket(authProvider.currentUserId);
+
       _bookingProvider!.startPaymentTimer(_showTimeoutDialog);
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context); // Tutup loading
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
       );
       Navigator.pop(context);
     }
   }
 
+  // 🔥 Fungsi mendengarkan sinyal WebSocket secara real-time
+  void _initWebSocket(String? userId) {
+    if (userId == null) return;
+
+    // ✅ Terhubung ke server (Tanpa melemparkan BuildContext lagi)
+    _webSocketService.connectToServer(userId);
+
+    // Listen ke aliran data (stream)
+    _wsSubscription = _webSocketService.paymentStream.listen((data) {
+      final String status = data['status'] ?? '';
+      final String message = data['message'] ?? 'Notification';
+
+      if (!mounted) return;
+
+      // 1. Munculkan snackbar notifikasi dari server
+      _showFloatingNotification(context, message, status);
+
+      // 2. Jika status 'success' (misal dibayar lewat kanal luar), langsung trigger sukses
+      if (status == 'success') {
+        _handlePaymentSuccess();
+      }
+    });
+  }
+
+  // Fungsi helper ketika pembayaran sukses (dipakai di WS atau tombol HTTP)
+  void _handlePaymentSuccess() {
+    if (_bookingProvider == null) return;
+
+    _bookingProvider!.stopTimer(); // Matikan countdown timer
+    final Booking finalBooking = _bookingProvider!.completePayment();
+
+    // Arahkan langsung ke Success Screen
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => SuccessScreen(booking: finalBooking)),
+    );
+  }
+
+  // Fungsi pembantu untuk memunculkan SnackBar mengambang yang rapi
+  void _showFloatingNotification(
+    BuildContext context,
+    String message,
+    String status,
+  ) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              status == 'success' ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: status == 'success'
+            ? Colors.green.shade700
+            : Colors.red.shade700,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
   @override
   void dispose() {
-    // Matikan timer dengan aman
+    // 🛑 Bersihkan semua subscription & koneksi demi mencegah memory leak
+    _wsSubscription?.cancel();
+    _webSocketService.disconnect();
     _bookingProvider?.stopTimer();
     super.dispose();
   }
@@ -105,32 +196,33 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
+    // 1. Set tombol ke mode loading
+    setState(() {
+      _isProcessingPayment = true;
+    });
+
     try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(
-          child: CircularProgressIndicator(color: AppConstants.primaryColor),
-        ),
-      );
+      // 💡 JEDA BUATAN (1.5 Detik): Memberikan efek loading transisi yang mulus di server lokal
+      await Future.delayed(const Duration(milliseconds: 1500));
 
       await provider.processPayment(
-        bookingId: provider.currentBookingId!, // Ambil ID yang didapat dari lockSeats
+        bookingId: provider.currentBookingId!,
         paymentMethod: provider.selectedPayment,
         token: token,
       );
 
       if (!mounted) return;
-      Navigator.pop(context); // tutup loading
 
-      final Booking finalBooking = provider.completePayment();
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => SuccessScreen(booking: finalBooking)),
-      );
+      // Jika sukses, lempar ke halaman sukses
+      _handlePaymentSuccess();
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // tutup loading
+
+      // 2. Jika gagal, matikan loading agar user bisa klik ulang tombolnya
+      setState(() {
+        _isProcessingPayment = false;
+      });
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memproses pembayaran: $e'),
@@ -198,8 +290,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildOrderSummary(BookingProvider provider,
-      {required double posterHeight, required double posterWidth}) {
+  Widget _buildOrderSummary(
+    BookingProvider provider, {
+    required double posterHeight,
+    required double posterWidth,
+  }) {
     return OrderSummaryCard(
       movie: provider.activeMovie!,
       cinema: provider.selectedCinema,
@@ -234,8 +329,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 flex: 4,
                 child: Padding(
                   padding: const EdgeInsets.only(top: 42),
-                  child: _buildOrderSummary(provider,
-                      posterHeight: 280, posterWidth: 180),
+                  child: _buildOrderSummary(
+                    provider,
+                    posterHeight: 280,
+                    posterWidth: 180,
+                  ),
                 ),
               ),
             ],
@@ -270,23 +368,36 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: AppConstants.primaryColor,
-            disabledBackgroundColor:
-                AppConstants.primaryColor.withOpacity(0.45),
+            disabledBackgroundColor: AppConstants.primaryColor.withOpacity(
+              0.45,
+            ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(32),
             ),
           ),
-          onPressed: provider.canPay ? () => _onPayNow(provider) : null,
-          child: Text(
-            provider.canPay
-                ? 'Pay Now · Rp ${provider.totalPrice}'
-                : 'Select Payment Method',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          // ✅ Mengunci tombol agar tidak bisa di-spam klik selama proses loading berjalan
+          onPressed: (provider.canPay && !_isProcessingPayment)
+              ? () => _onPayNow(provider)
+              : null,
+          child: _isProcessingPayment
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : Text(
+                  provider.canPay
+                      ? 'Pay Now · Rp ${provider.totalPrice}'
+                      : 'Select Payment Method',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
         ),
       ),
     );
