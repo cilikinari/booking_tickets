@@ -78,15 +78,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  // 🔥 Fungsi mendengarkan sinyal WebSocket secara real-time
+  // Fungsi mendengarkan sinyal WebSocket secara real-time
   void _initWebSocket(String? userId) {
     if (userId == null) return;
 
-    // ✅ Terhubung ke server (Tanpa melemparkan BuildContext lagi)
+    // Terhubung ke server
     _webSocketService.connectToServer(userId);
 
     // Listen ke aliran data (stream)
     _wsSubscription = _webSocketService.paymentStream.listen((data) {
+      final String type = data['type'] ?? '';
       final String status = data['status'] ?? '';
       final String message = data['message'] ?? 'Notification';
 
@@ -95,9 +96,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
       // 1. Munculkan snackbar notifikasi dari server
       _showFloatingNotification(context, message, status);
 
-      // 2. Jika status 'success' (misal dibayar lewat kanal luar), langsung trigger sukses
+      // 2. Jika status 'success' (dibayar lewat kanal luar), langsung trigger sukses
       if (status == 'success') {
         _handlePaymentSuccess();
+      }
+      
+      else if (status == 'timeout' || status == 'expired' || type == 'BOOKING_TIMEOUT') {
+        _bookingProvider?.stopTimer();
+        _showTimeoutDialog();          
       }
     });
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'auth_services.dart'; 
 
 class WebSocketService {
   WebSocketChannel? _channel;
@@ -13,14 +14,12 @@ class WebSocketService {
   // Getter agar UI bisa mendengarkan aliran data ini
   Stream<Map<String, dynamic>> get paymentStream => _paymentStreamController.stream;
 
-  // 💡 BuildContext sudah dihapus dari parameter!
   void connectToServer(String currentUserId) {
     if (_isConnecting) return;
     _isConnecting = true;
 
-    // 💡 TIPS EMULATOR ANDROID: ganti 'localhost' jadi '10.0.2.2'. 
-    // Kalau pakai HP asli/iOS tetap 'localhost' atau 'IP Laptop'.
-    final String wsUrl = 'ws://localhost:3000/ws/notifications/$currentUserId'; 
+    final String rawUrl = AuthServices.baseUrl.replaceAll('http://', 'ws://').replaceAll('/api/v1', '');
+    final String wsUrl = '$rawUrl/ws/notifications/$currentUserId';
 
     try {
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
@@ -32,12 +31,9 @@ class WebSocketService {
           try {
             final Map<String, dynamic> data = jsonDecode(message);
 
-            // 1. Cek tipe notifikasinya
-            if (data['type'] == 'PAYMENT_NOTIFICATION') {
+            if (data['type'] == 'PAYMENT_NOTIFICATION' || data['type'] == 'BOOKING_TIMEOUT') {
               
-              // 2. CRITICAL FILTER: Pastikan user_id dari server SAMA dengan user yang lagi login!
               if (data['user_id'] == currentUserId) {
-                // 🔥 Teruskan data ke Stream agar ditangkap oleh PaymentScreen
                 _paymentStreamController.add(data);
               }
             }
@@ -48,12 +44,12 @@ class WebSocketService {
         onError: (error) {
           print('❌ [WS] Error: $error');
           _isConnecting = false;
-          _reconnect(currentUserId); // Auto reconnect kalau error
+          _reconnect(currentUserId);
         },
         onDone: () {
           print('❌ [WS] Koneksi terputus dari server.');
           _isConnecting = false;
-          _reconnect(currentUserId); // Auto reconnect kalau server restart
+          _reconnect(currentUserId);
         },
       );
     } catch (e) {
