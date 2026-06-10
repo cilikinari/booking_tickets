@@ -20,7 +20,7 @@ class WebSocketService {
 
     // 💡 TIPS EMULATOR ANDROID: ganti 'localhost' jadi '10.0.2.2'. 
     // Kalau pakai HP asli/iOS tetap 'localhost' atau 'IP Laptop'.
-    const String wsUrl = 'ws://localhost:3000/ws/notifications'; 
+    final String wsUrl = 'ws://localhost:3000/ws/notifications/$currentUserId'; 
 
     try {
       _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
