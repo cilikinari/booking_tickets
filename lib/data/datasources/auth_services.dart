@@ -6,14 +6,13 @@ import 'dart:io' show Platform;
 class AuthServices {
   static String get baseUrl {
     if (kIsWeb) {
-      return 'http://127.0.0.1:3000/api/v1';
-    } 
-    else if (Platform.isAndroid) {
-      return 'http://10.126.15.244:3000/api/v1';
-    } 
+      return 'http://localhost:3000/api/v1';
+    } else if (Platform.isAndroid) {
+      return 'http://localhost:3000/api/v1';
+    }
     // 3. Sisanya (Windows Desktop / iOS)
     else {
-      return 'http://127.0.0.1:3000/api/v1';
+      return 'http://localhost:3000/api/v1';
     }
   }
 
@@ -24,18 +23,13 @@ class AuthServices {
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        String token = data['token']; 
+        String token = data['token'];
         return token;
       } else {
         final errorData = jsonDecode(response.body);
@@ -47,15 +41,18 @@ class AuthServices {
   }
 
   // API Register
-  static Future<bool> register(String name, String email, String password, String phone) async {
-    final url = Uri.parse('$baseUrl/register'); 
+  static Future<bool> register(
+    String name,
+    String email,
+    String password,
+    String phone,
+  ) async {
+    final url = Uri.parse('$baseUrl/register');
 
     try {
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': name,
           'email': email,
@@ -66,7 +63,7 @@ class AuthServices {
 
       // Status 201 Created atau 200 OK
       if (response.statusCode == 201 || response.statusCode == 200) {
-        return true; 
+        return true;
       } else {
         final errorData = jsonDecode(response.body);
         throw Exception(errorData['message'] ?? 'Gagal mendaftar');
@@ -86,7 +83,8 @@ class AuthServices {
       String decodedPayload = utf8.decode(base64Url.decode(normalized));
       Map<String, dynamic> payloadMap = jsonDecode(decodedPayload);
 
-      final userId = payloadMap['id'] ?? payloadMap['user_id'] ?? payloadMap['sub'];
+      final userId =
+          payloadMap['id'] ?? payloadMap['user_id'] ?? payloadMap['sub'];
 
       if (userId == null) {
         throw Exception('User ID tidak ditemukan di dalam token');
@@ -98,13 +96,13 @@ class AuthServices {
         url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', 
+          'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['data'] ?? data; 
+        return data['data'] ?? data;
       } else {
         throw Exception('Gagal mengambil data profil');
       }

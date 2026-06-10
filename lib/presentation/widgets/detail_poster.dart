@@ -20,7 +20,7 @@ class MoviePoster extends StatelessWidget {
       if (cleanedPosterUrl.startsWith('/')) {
         cleanedPosterUrl = cleanedPosterUrl.substring(1);
       }
-      cleanedPosterUrl = 'http://10.126.15.244:3000/$cleanedPosterUrl';
+      cleanedPosterUrl = 'http://localhost:3000/$cleanedPosterUrl';
     }
 
     // 🟢 DIBUNGKUS CONSTRAINEDBOX AGAR TIDAK OVERFLOW (Garis zebra)

@@ -78,7 +78,7 @@ class MovieCard extends StatelessWidget {
                 ? Image.network(
                     movie.posterUrl.startsWith('http')
                         ? movie.posterUrl
-                        : 'http://10.126.15.244:3000/${movie.posterUrl}',
+                        : 'http://localhost:3000/${movie.posterUrl}',
                     fit: BoxFit.cover,
                     height: isWide ? 200 : 220,
                     width: isWide ? 350 : 150,
