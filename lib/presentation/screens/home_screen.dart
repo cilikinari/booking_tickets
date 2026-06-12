@@ -12,7 +12,7 @@ import '../widgets/movie_section.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/app_footer.dart';
 
-// 1. 🟢 DIUBAH JADI STATEFULWIDGET: Supaya bisa nembak API pas halaman diakses
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
   
@@ -24,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // 2. 🟢 PEMICU API: Ambil data film teranyar dari backend Go-Fiber
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<MovieProvider>(context, listen: false).fetchHomeData();
     });
@@ -44,20 +43,17 @@ class _HomeScreenState extends State<HomeScreen> {
             constraints: const BoxConstraints(maxWidth: AppConstants.maxWidth),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppConstants.padding),
-              // 3. 🟢 BUNGKUS DENGAN CONSUMER: Menangani state loading/error film secara reaktif
+          
               child: Consumer<MovieProvider>(
                 builder: (context, movieProvider, child) {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const AppLogo(), // <-- FIX-NYA DI SINI
+                      const AppLogo(),
                       const SizedBox(height: 16),
                       _buildSearchBar(context),
                       const SizedBox(height: 24),
 
-                      // =========================================================
-                      // KONDISI 1: JIKA SEAT / FILM SEDANG DI-DOWNLOAD
-                      // =========================================================
                       if (movieProvider.isLoading)
                         const SizedBox(
                           height: 350,
@@ -68,9 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         )
 
-                      // =========================================================
-                      // KONDISI 2: JIKA BACKEND GO-FIBER DOWN / OFFLINE
-                      // =========================================================
+             
                       else if (movieProvider.errorMessage.isNotEmpty)
                         SizedBox(
                           height: 350,
@@ -96,9 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         )
 
-                      // =========================================================
-                      // KONDISI 3: BERHASIL AMBIL DATA DARI BACKEND
-                      // =========================================================
                       else ...[
                         // Section Top Movies
                         MovieSection(
@@ -110,7 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 24),
 
-                        // Section Now Showing
                         MovieSection(
                           title: "Now Showing",
                           movies: movieProvider.nowPlaying,

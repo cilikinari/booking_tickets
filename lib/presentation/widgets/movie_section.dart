@@ -124,7 +124,6 @@ class MovieCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                // 🟢 PENGAMAN GENRE ADA DI SINI
                 Text(
                   "${movie.releaseYear} • ${movie.genres.isEmpty ? 'No Genre' : movie.genres.map((g) => g.name).join(', ')}",
                   maxLines: 1,
